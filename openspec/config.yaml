@@ -1,0 +1,209 @@
+schema: spec-driven
+
+# Project context, injected into every OpenSpec artifact instruction (50KB limit).
+# Source of truth for requirements is PRD.md (Bahasa Indonesia); this file keeps
+# only the constraints that shape every change. Look up details in the PRD by
+# section number or requirement ID.
+context: |
+  # AJ224 ERP
+
+  ## Purpose
+  Internal web ERP for UD. AJ224 (Lamongan, East Java), a stringing subcontractor
+  for SUTET/SUTT transmission towers (150/275/500 kV). It replaces paper, WhatsApp
+  and scattered Excel files. v1 goals: per-project profit/loss at any time; no
+  missed termin billing or supplier due dates; no worker with an expired mandatory
+  certificate assigned to a project; known location and condition of every tool;
+  tender history with win rate.
+
+  Full requirements live in PRD.md (Bahasa Indonesia). Requirement ID prefixes:
+  UMM general, MST master data, MKT marketing/tender, PRJ project, OPS daily field
+  report, ALT tools, MAT materials, K3 safety incidents, FIN finance, HCM HR,
+  PAY payroll, DSB dashboard. Priority "Wajib" = must ship in v1; "Sebaiknya" =
+  may slip to v1.1. Business formulas: PRD §11. Access matrix: §13. Out of scope: §7.2.
+
+  ## Core domain rules
+  - The Project (Proyek) is the hub. Every cost, invoice, attendance row, daily
+    report, tool/material movement and K3 incident belongs to one project; costs
+    may instead go to "Kantor/Umum" (office overhead). Every cost row carries a
+    project-or-office and a cost category (kategori biaya).
+  - Lifecycle: won Tender → Project (contract + addenda, termin schedule, RAB per
+    cost category, seksi tarik × stringing stages) → crew assignment, tool
+    mobilisation, client material receipt, field-cash top-up → daily execution
+    (attendance, daily report that updates seksi progress, material usage,
+    field-cash spending, incidents) → billing (termin "Siap Ditagih" → invoice →
+    payment) → costs and payroll → project close (checklist; retention billed later).
+  - Single cost source rule (PRD §11.3): a cost enters exactly once, as a supplier
+    bill line, a direct expense, an approved field-cash "Biaya Proyek" expense, or
+    a payroll allocation. Supplier payments, field-cash top-ups, kasbon and cash
+    wage payments are not costs. Never design a flow that can count a cost twice.
+  - Progress is tracked per seksi tarik (span between two tension towers) × stage,
+    with stage weights from a template that totals 100. Project progress is
+    kms-weighted. Progress rises through daily reports; lowering it needs the
+    Operasional role and a reason.
+  - Inventory tracks quantities only, never value. Tools are per-unit (serial) or
+    per-quantity, with stock by location × condition (Baik, Rusak, Dalam Perbaikan,
+    Hilang). Materials are company-owned or client-supplied (titipan klien,
+    reconciled per project). Moves between locations use a surat jalan: stock
+    leaves the source on Dikirim and reaches the destination on Diterima.
+  - Payroll covers daily-paid field workers and monthly office staff, computed
+    from attendance, pay settings and kasbon installments. Flow: Draft (HCM) →
+    Diajukan → Disetujui (Direktur) → Dibayar (Finance). Approval locks that
+    period's slips and attendance and allocates gross pay to projects by days present.
+  - v1 is not an accounting system: no journals, ledger or balance sheet; no
+    PPh 21, BPJS or e-Faktur engine (tax lines are entered manually); no purchase
+    orders or approval chains; no inventory valuation; no GPS/selfie attendance; no
+    native app or full offline mode. Financial data is exported to Excel for the
+    external accountant.
+
+  ## Users, roles and access
+  - Seven roles, one per account: Super Admin, Direktur, Marketing, Finance, HCM,
+    Operasional, Lapangan. Accounts are invite-only; public sign-up is disabled.
+    Workers have no accounts; field admins/mandor enter attendance per crew per day.
+  - Lapangan users see only the projects of their active assignment (penugasan),
+    including on direct URL access. A worker has at most one active assignment.
+  - Salary data (pay settings, slips, payroll, kasbon) is visible only to Finance,
+    HCM and Direktur; Super Admin does not see it. Keep it in separate tables so
+    RLS can isolate it.
+  - Scale: about 10–25 users, 50–200 employees, 2–5 concurrent projects. Design
+    for 10× that without architectural change.
+
+  ## Tech stack
+  - Next.js 16 App Router (Server Components; Server Actions for data writes;
+    `proxy.ts` refreshes the Supabase session; `cacheComponents` enabled),
+    React 19, TypeScript strict, path alias `@/*`.
+  - Supabase: Postgres, Auth (email + password, invite-only, custom SMTP such as
+    Resend or Mailgun), Storage (private buckets per domain, short-lived signed
+    URLs), Edge Functions, pg_cron. Clients come from `@supabase/ssr` in
+    `lib/supabase/{client,server,proxy}.ts`.
+  - shadcn/ui is the design system (see "UI and design system" below) on
+    Tailwind CSS v4, with lucide icons and next-themes. Charts use shadcn Chart
+    (built on Recharts).
+  - Hosting: Vercel; Supabase Pro in ap-southeast-1 (Singapore). Two Supabase
+    projects: Staging (UAT) and Production.
+  - Package manager: pnpm.
+
+  ## Architecture conventions
+  - Row Level Security on every table, no exceptions. The user's role is added to
+    the JWT by a Custom Access Token Hook and read by both RLS and the UI. Never
+    rely on hiding UI alone. Storage policies mirror table RLS.
+  - Numbers shown on several pages (combined project cost, progress, P/L, AR/AP
+    aging, certificate status, field-cash balance, project health) are computed in
+    Postgres views/functions, not re-implemented in TypeScript, so every page agrees.
+  - Database triggers handle document numbering, progress history, stock updates
+    and the audit log.
+  - Scheduled jobs (pg_cron + Edge Functions, each morning; email digest at 07:00
+    WIB) refresh certificate status, AR/AP due dates, date-based termin and missing
+    daily reports, then create in-app notifications. LTI/Fatal incidents notify
+    Direktur and Operasional (in-app + email) within 5 minutes.
+  - Schema changes are versioned SQL migrations (Supabase CLI), applied to Staging
+    before Production.
+  - Transactions are never hard-deleted: they are cancelled with status "Batal"
+    and a reason, stay visible with a marker, and are excluded from reports.
+  - Audit log (who, when, what changed) for finance, payroll, locked attendance,
+    stock opname, system parameters and every override (certificate assignment,
+    project close).
+  - Tunable thresholds live in system parameters, not code: backdating limit
+    (default H+3), certificate "expiring soon" window (60 days), project health
+    thresholds (10/20 points), PPN rate, standard work hours (8), monthly-salary
+    divisor (26), document number formats (e.g. INV/AJ224/2026/10/001).
+  - Every list has search, filters, pagination and .xlsx export matching the
+    active filters. Invoice, surat jalan, payslip, daily report and incident report
+    have A4 print layouts with the company letterhead (printed to PDF from the browser).
+
+  ## Code and UI conventions
+  - All UI text is Bahasa Indonesia, using field vocabulary (seksi, tower, termin,
+    BAP, kasbon, RAB, K3). Code identifiers, database tables and columns, file
+    names and OpenSpec artifacts are in English: snake_case for tables and columns,
+    kebab-case for files. Domain terms with no clean English equivalent may stay
+    Indonesian (termin, kasbon, seksi, rab). PRD §12 entity names are indicative only.
+  - Display formats: currency "Rp 1.250.000" (no decimals); dates "25 Okt 2026" or
+    dd/mm/yyyy; decimal comma (4,2 km). Time zone Asia/Jakarta (WIB): compute
+    "today" in WIB for due dates, H+3 limits, certificate status and LTI-free days.
+  - Store money as NUMERIC, never floating point. Amounts and quantities are
+    validated as non-negative.
+  - Two UI surfaces: office (desktop Chrome/Edge) and field (Android Chrome,
+    ≥ 360 px wide, one-handed, large buttons, weak signal). Field forms stay light,
+    compress photos on the device (≤ 1 MB; any file ≤ 10 MB; PDF/JPG/PNG/XLSX),
+    allow upload retry and keep local drafts. The Lapangan home shows only quick
+    actions for its active project.
+  - Excel/CSV imports use templates, report failed rows with reasons and still
+    import the valid rows.
+
+  ## UI and design system (shadcn/ui)
+  shadcn/ui is the single design system. Use it for everything it can do; do not
+  write custom styling.
+  - The setup lives in `components.json`: style radix-nova, base color neutral,
+    CSS variables, lucide icons. Change it only in a dedicated change.
+  - Before building any UI element, check whether shadcn has a component or block
+    for it and add it with the project's CLI: `pnpm exec shadcn add <name>`. Never
+    hand-build a lookalike of an existing shadcn component.
+  - Treat `components/ui` as generated code: do not restyle it for one screen. If
+    a variant is needed app-wide (for example a status color), add it once to that
+    component's `cva` variants.
+  - App components (`components/<module>/...`) are compositions of shadcn
+    components. Tailwind classes there are for layout only: flex/grid, gap,
+    spacing, width, responsive breakpoints and `print:` variants.
+  - No custom CSS: no new .css files, CSS modules, `style={{}}` or CSS-in-JS.
+    `app/globals.css` holds only the Tailwind/shadcn imports and theme variables.
+  - Colors, radius and shadows come from shadcn tokens (`bg-background`,
+    `text-muted-foreground`, `bg-primary`, `text-destructive`, `border`,
+    `chart-1`…`chart-5`). No raw palette colors (`bg-red-500`), hex values or
+    arbitrary values (`w-[317px]`).
+  - Status colors the PRD needs (Normal/Waspada/Kritis, RAB ≥ 80% / > 100%,
+    overdue, certificate status) are defined once as shadcn-style theme variables
+    (e.g. `--success`, `--warning`) in globals.css and exposed through Badge and
+    Alert variants. Screens use those variants, never colors directly.
+  - Standard building blocks:
+    - App shell: Sidebar, Breadcrumb; notification bell in a Popover.
+    - Lists: Data Table (Table + TanStack Table) with Input search,
+      Select/Combobox filters and Pagination.
+    - Forms: Field components with React Hook Form + Zod; Combobox to pick
+      clients, projects, employees and suppliers; Date Picker (Calendar +
+      Popover, Indonesian locale).
+    - Overlays: Dialog for desktop create/edit, Sheet for side details, Drawer
+      for mobile field forms, AlertDialog to confirm cancelling (Batal) and other
+      irreversible actions.
+    - Feedback: Sonner toasts, Alert, Skeleton while loading, Empty for empty states.
+    - Data display: Badge for every status, Progress for progress bars, Tabs for
+      the Project detail page, Card for dashboard tiles, Chart for graphs.
+  - Field (mobile) screens use the same components with larger size variants
+    (e.g. Button size="lg"), not custom CSS.
+
+  ## Open questions (PRD §19, not yet confirmed by the client)
+  PKP/PPN status, piece-rate (borongan) pay and pay period, whether main materials
+  are always client-supplied, third-party labour, spending approval limits, current
+  document formats, stage weights, and whether sick/permitted leave is paid. Keep
+  anything that depends on these configurable rather than hard-coding an answer.
+
+  ## Release order (PRD §17)
+  1 Foundation: auth and roles, master data, employees, certificates, clients,
+  tenders. 2 Projects and field: projects, termin, RAB, seksi and progress,
+  assignment, attendance, daily reports, tools, materials. 3 Finance and K3.
+  4 Payroll and dashboard: kasbon, payroll, notifications, print/export, audit log.
+  5 UAT and go-live.
+
+  ## Spec capabilities
+  Name spec folders by module in English kebab-case: access-control, master-data,
+  marketing, projects, daily-reports, equipment, materials, k3-incidents, finance,
+  hcm, payroll, dashboard, platform (attachments, export, print, notifications,
+  audit log, import, document numbering).
+
+# Per-artifact rules, added to the schema's built-in guidance.
+rules:
+  proposal:
+    - List the PRD requirement IDs the change covers and their priority (Wajib/Sebaiknya)
+    - State what is out of scope, citing PRD §7.2 where relevant
+    - Call out any dependency on an unresolved PRD §19 open question
+  specs:
+    - Tag each requirement with its PRD ID(s), e.g. (MKT-04)
+    - Turn the PRD acceptance criteria into scenarios
+    - Add access scenarios for roles that can and cannot read or edit the data, including Lapangan project scoping
+  design:
+    - List the tables, per-role RLS policies, views/functions, triggers and storage buckets touched
+    - Name the PRD §11 formulas the change implements and where they are computed
+    - Check the change against the single cost source rule whenever it records or moves money
+    - Name the shadcn components each screen uses; justify any UI that is not built from shadcn
+  tasks:
+    - Every schema change includes migration, RLS policy and Supabase type regeneration tasks
+    - Include Excel export and print-layout tasks wherever the PRD requires them
+    - Include a `pnpm exec shadcn add` task for each shadcn component not yet in components/ui
