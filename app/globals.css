@@ -127,3 +127,22 @@
     @apply font-sans;
   }
 }
+
+/* Print (UMM-05): A4 pages, always dark text on white. */
+@page {
+  size: A4;
+  margin: 15mm;
+}
+
+@media print {
+  .dark {
+    color-scheme: light;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --border: oklch(0.922 0 0);
+  }
+}

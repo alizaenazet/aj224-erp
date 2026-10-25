@@ -1,5 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
+import type { Database } from "./database.types";
 
 /**
  * Especially important if using Fluid compute: Don't put this client in a
@@ -7,9 +9,12 @@ import { cookies } from "next/headers";
  * it.
  */
 export async function createClient() {
+  // ERP data is per user and must be fresh: render every read at request time
+  // (not in the prefetched App Shell), streaming into its Suspense fallback.
+  await connection();
   const cookieStore = await cookies();
 
-  return createServerClient(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {

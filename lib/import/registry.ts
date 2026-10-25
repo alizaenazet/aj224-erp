@@ -1,0 +1,33 @@
+import "server-only";
+
+import type { AppRole } from "@/lib/auth/roles";
+import { certificatesTemplate } from "@/lib/import/templates/certificates";
+import { clientsTemplate } from "@/lib/import/templates/clients";
+import { employeesTemplate } from "@/lib/import/templates/employees";
+import { suppliersTemplate } from "@/lib/import/templates/suppliers";
+import { tendersTemplate } from "@/lib/import/templates/tenders";
+import type { ImportTemplate } from "@/lib/import/types";
+
+/** Import templates by key (UMM-13). Later modules add theirs here. */
+export const IMPORT_TEMPLATES: Record<string, ImportTemplate> = Object.fromEntries(
+  [employeesTemplate, certificatesTemplate, clientsTemplate, suppliersTemplate, tendersTemplate].map((template) => [
+    template.key,
+    template as ImportTemplate,
+  ]),
+);
+
+/** Templates a role may use, with what the page needs to show them. */
+export function templatesForRole(role: AppRole) {
+  return Object.values(IMPORT_TEMPLATES)
+    .filter((template) => template.roles.includes(role))
+    .map(({ key, title, description, columns }) => ({
+      key,
+      title,
+      description,
+      required: columns.filter((column) => column.required).map((column) => column.header),
+    }));
+}
+
+export function templateTitle(key: string) {
+  return IMPORT_TEMPLATES[key]?.title ?? key;
+}

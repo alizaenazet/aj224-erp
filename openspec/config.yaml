@@ -95,8 +95,15 @@ context: |
     WIB) refresh certificate status, AR/AP due dates, date-based termin and missing
     daily reports, then create in-app notifications. LTI/Fatal incidents notify
     Direktur and Operasional (in-app + email) within 5 minutes.
-  - Schema changes are versioned SQL migrations (Supabase CLI), applied to Staging
-    before Production.
+  - Schema changes are versioned SQL migrations in `supabase/migrations`
+    (Supabase CLI). Development runs against local Supabase in Docker
+    (`pnpm db:start`, `pnpm db:reset`, `pnpm db:types`); migrations are pushed to
+    the hosted Staging project, then Production. `supabase/seed.sql` holds
+    local-only dev data, including one dev user per role.
+  - Verification is manual; v1 has no automated test framework. Each task is
+    checked by running SQL as each role against the local database (RLS and
+    PRD §11 formulas) and by walking through the acceptance criteria in the
+    browser as each affected role, plus `pnpm lint` and `pnpm build`.
   - Transactions are never hard-deleted: they are cancelled with status "Batal"
     and a reason, stay visible with a marker, and are excluded from reports.
   - Audit log (who, when, what changed) for finance, payroll, locked attendance,
@@ -106,6 +113,20 @@ context: |
     (default H+3), certificate "expiring soon" window (60 days), project health
     thresholds (10/20 points), PPN rate, standard work hours (8), monthly-salary
     divisor (26), document number formats (e.g. INV/AJ224/2026/10/001).
+  - Next 16 cache components + partial prefetching: every app page keeps a
+    static header and wraps its data in its own `<Suspense>` (fallback:
+    `ContentSkeleton`). Server reads go through `lib/supabase/server.ts`, which
+    calls `connection()`. Pages check access with `requireRole()` inside the
+    suspended part and render `AccessDenied` when refused; server actions use
+    `assertRole()` and return `ActionResult`. Auth transitions (sign-in,
+    sign-out, set password) use a full page load.
+  - Each module adds its menu items to `lib/navigation.ts` with the roles from
+    PRD §13.
+  - Forms share one zod schema between the client (react-hook-form +
+    zodResolver) and the server action. The resolver passes the schema's
+    output to the action, which re-validates it, so a schema must accept its
+    own output (e.g. optional text: `.nullable()` before transforming "" to
+    null).
   - Every list has search, filters, pagination and .xlsx export matching the
     active filters. Invoice, surat jalan, payslip, daily report and incident report
     have A4 print layouts with the company letterhead (printed to PDF from the browser).
@@ -207,3 +228,4 @@ rules:
     - Every schema change includes migration, RLS policy and Supabase type regeneration tasks
     - Include Excel export and print-layout tasks wherever the PRD requires them
     - Include a `pnpm exec shadcn add` task for each shadcn component not yet in components/ui
+    - State each task's manual check (SQL as a named role, or a browser walkthrough as a named role); do not add automated test tasks
