@@ -229,3 +229,294 @@ values
    'Presentasi metode kerja reconductoring.', public.today_wib() + 4, null, '00000000-0000-4000-8000-000000000003'),
   ('40000000-0000-4000-8000-000000000003', null, public.today_wib() - 40, 'visit',
    'Silaturahmi dan pengenalan perusahaan.', public.today_wib() - 35, now() - interval '34 days', '00000000-0000-4000-8000-000000000003');
+
+-- Projects, contracts, terms and RAB (dev; dates relative to the reset day) — add-projects-contracts
+insert into public.projects (
+  id, name, client_id, tender_id, end_owner, site, voltage_kv, length_kms, tower_count,
+  start_date, target_finish_date, status
+) values
+  ('60000000-0000-4000-8000-000000000001', 'Stringing SUTT 150 kV Kediri – Pare',
+   '40000000-0000-4000-8000-000000000001', '50000000-0000-4000-8000-000000000006', 'PLN UIP JBTB',
+   'Kediri, Jawa Timur', 150, 22, 70, public.today_wib() - 45, public.today_wib() + 120, 'running'),
+  ('60000000-0000-4000-8000-000000000002', 'Pembangunan SUTET 500 kV Paiton – Grati Seksi 2',
+   '40000000-0000-4000-8000-000000000002', '50000000-0000-4000-8000-000000000007', 'PLN UIP JBTB',
+   'Probolinggo, Jawa Timur', 500, 18, 45, public.today_wib() + 14, public.today_wib() + 200, 'preparing'),
+  ('60000000-0000-4000-8000-000000000003', 'Perbaikan Tower SUTT 150 kV Tuban',
+   '40000000-0000-4000-8000-000000000003', null, 'PLN UIT JBM',
+   'Tuban, Jawa Timur', 150, 3, 6, public.today_wib() - 20, public.today_wib() + 40, 'running');
+
+insert into public.project_contracts (project_id, contract_no, contract_date, contract_value, ppn_applicable, maintenance_months, scope) values
+  ('60000000-0000-4000-8000-000000000001', '0123/SPK/UIP-JBTB/2026', public.today_wib() - 50, 10000000000, true, 12,
+   'Stringing 22 kms SUTT 150 kV Kediri – Pare termasuk pemasangan aksesoris.'),
+  ('60000000-0000-4000-8000-000000000002', '0456/SPK/RJE/2026', public.today_wib() - 5, 6000000000, true, 6,
+   'Erection dan stringing SUTET 500 kV Paiton – Grati Seksi 2.'),
+  ('60000000-0000-4000-8000-000000000003', '0789/SPK/KKN/2026', public.today_wib() - 25, 1800000000, true, 3,
+   'Perbaikan 6 tower roboh dan restringing seksi terdampak.');
+
+insert into public.project_addenda (project_id, addendum_no, addendum_date, new_value, description) values
+  ('60000000-0000-4000-8000-000000000001', 'ADD-01', public.today_wib() - 10, 10500000000,
+   'Penambahan lingkup jumper dan pengecatan tower.');
+
+insert into public.project_terms (
+  project_id, sort_order, name, kind, percent, condition_type, condition_progress, condition_date, status, ready_at
+) values
+  ('60000000-0000-4000-8000-000000000001', 1, 'Uang Muka', 'down_payment', 20, 'manual', null, null, 'ready', now() - interval '40 days'),
+  ('60000000-0000-4000-8000-000000000001', 2, 'Termin 1', 'progress', 35, 'progress', 50, null, 'not_due', null),
+  ('60000000-0000-4000-8000-000000000001', 3, 'Termin 2', 'progress', 40, 'progress', 100, null, 'not_due', null),
+  ('60000000-0000-4000-8000-000000000001', 4, 'Retensi', 'retention', 5, 'date', null, public.today_wib() + 485, 'not_due', null),
+  ('60000000-0000-4000-8000-000000000002', 1, 'Uang Muka', 'down_payment', 10, 'manual', null, null, 'not_due', null),
+  ('60000000-0000-4000-8000-000000000002', 2, 'Termin 1', 'progress', 85, 'progress', 100, null, 'not_due', null),
+  ('60000000-0000-4000-8000-000000000002', 3, 'Retensi', 'retention', 5, 'date', null, public.today_wib() + 380, 'not_due', null),
+  ('60000000-0000-4000-8000-000000000003', 1, 'Pembayaran setelah BAST', 'progress', 100, 'manual', null, null, 'not_due', null);
+
+insert into public.project_budgets (project_id, cost_category_id, amount)
+select v.project_id::uuid, c.id, v.amount
+from (values
+  ('60000000-0000-4000-8000-000000000001', 'WAGES', 3000000000),
+  ('60000000-0000-4000-8000-000000000001', 'ACCOM', 600000000),
+  ('60000000-0000-4000-8000-000000000001', 'MOBIL', 400000000),
+  ('60000000-0000-4000-8000-000000000001', 'MATERIAL', 2500000000),
+  ('60000000-0000-4000-8000-000000000001', 'RENTAL', 1200000000),
+  ('60000000-0000-4000-8000-000000000001', 'FUEL', 500000000),
+  ('60000000-0000-4000-8000-000000000001', 'SAFETY', 300000000),
+  ('60000000-0000-4000-8000-000000000001', 'PERMIT', 300000000),
+  ('60000000-0000-4000-8000-000000000001', 'OTHER', 200000000),
+  ('60000000-0000-4000-8000-000000000002', 'WAGES', 2000000000),
+  ('60000000-0000-4000-8000-000000000002', 'MATERIAL', 1500000000),
+  ('60000000-0000-4000-8000-000000000002', 'RENTAL', 1000000000),
+  ('60000000-0000-4000-8000-000000000003', 'WAGES', 700000000),
+  ('60000000-0000-4000-8000-000000000003', 'MATERIAL', 500000000),
+  ('60000000-0000-4000-8000-000000000003', 'RENTAL', 200000000),
+  ('60000000-0000-4000-8000-000000000003', 'ACCOM', 100000000)
+) as v(project_id, category_code, amount)
+join public.cost_categories c on c.code = v.category_code;
+
+-- Sections and stage progress with a dated log (dev) — add-sections-progress
+-- Kediri – Pare: S-01 90%, S-02 56%, S-03 35% (PRD §11.2 example), S-04 0% →
+-- project 49,1%, just under Termin 1 (≥ 50%).
+insert into public.project_sections (
+  id, project_id, code, tower_from, tower_to, tower_count, length_km, circuits, planned_start, planned_finish, sort_order
+) values
+  ('70000000-0000-4000-8000-000000000001', '60000000-0000-4000-8000-000000000001', 'S-01', 'T.01', 'T.06', 5, 2.5, 2,
+   public.today_wib() - 40, public.today_wib() - 10, 10),
+  ('70000000-0000-4000-8000-000000000002', '60000000-0000-4000-8000-000000000001', 'S-02', 'T.06', 'T.12', 6, 3.0, 2,
+   public.today_wib() - 25, public.today_wib() + 5, 20),
+  ('70000000-0000-4000-8000-000000000003', '60000000-0000-4000-8000-000000000001', 'S-03', 'T.12', 'T.18', 6, 4.2, 2,
+   public.today_wib() - 10, public.today_wib() + 25, 30),
+  ('70000000-0000-4000-8000-000000000004', '60000000-0000-4000-8000-000000000001', 'S-04', 'T.18', 'T.21', 3, 1.3, 2,
+   public.today_wib() + 20, public.today_wib() + 50, 40),
+  ('70000000-0000-4000-8000-000000000005', '60000000-0000-4000-8000-000000000003', 'S-01', 'T.20', 'T.26', 6, 1.5, 2,
+   public.today_wib() - 15, public.today_wib() + 30, 10);
+
+insert into public.progress_updates (
+  project_id, section_id, stage_id, old_progress, new_progress, source, note, created_by, created_at
+)
+select s.project_id, s.id, st.id, v.old_progress, v.new_progress, 'manual', v.note,
+       '00000000-0000-4000-8000-000000000006',
+       ((public.today_wib() - v.days_ago)::timestamp + time '10:00') at time zone 'Asia/Jakarta'
+from (values
+  ('70000000-0000-4000-8000-000000000001', 'Pemasangan Pulley', 0, 100, 38, null),
+  ('70000000-0000-4000-8000-000000000001', 'Penarikan Pilot Wire', 0, 100, 34, null),
+  ('70000000-0000-4000-8000-000000000001', 'Penarikan Konduktor', 0, 50, 30, 'Konduktor T.01–T.03'),
+  ('70000000-0000-4000-8000-000000000001', 'Penarikan Konduktor', 50, 100, 25, null),
+  ('70000000-0000-4000-8000-000000000001', 'Sagging', 0, 100, 21, null),
+  ('70000000-0000-4000-8000-000000000001', 'Clamping', 0, 100, 17, null),
+  ('70000000-0000-4000-8000-000000000001', 'Spacer & Damper', 0, 100, 13, null),
+  ('70000000-0000-4000-8000-000000000002', 'Pemasangan Pulley', 0, 100, 23, null),
+  ('70000000-0000-4000-8000-000000000002', 'Penarikan Pilot Wire', 0, 100, 19, null),
+  ('70000000-0000-4000-8000-000000000002', 'Penarikan Konduktor', 0, 40, 15, null),
+  ('70000000-0000-4000-8000-000000000002', 'Penarikan Konduktor', 40, 100, 9, null),
+  ('70000000-0000-4000-8000-000000000002', 'Sagging', 0, 40, 4, 'Sagging T.06–T.08'),
+  ('70000000-0000-4000-8000-000000000003', 'Pemasangan Pulley', 0, 100, 8, null),
+  ('70000000-0000-4000-8000-000000000003', 'Penarikan Pilot Wire', 0, 100, 5, null),
+  ('70000000-0000-4000-8000-000000000003', 'Penarikan Konduktor', 0, 50, 2, 'Konduktor T.12–T.15'),
+  ('70000000-0000-4000-8000-000000000005', 'Pemasangan Pulley', 0, 100, 10, null),
+  ('70000000-0000-4000-8000-000000000005', 'Penarikan Pilot Wire', 0, 50, 3, null)
+) as v(section_id, stage_name, old_progress, new_progress, days_ago, note)
+join public.project_sections s on s.id = v.section_id::uuid
+join public.project_stages st on st.project_id = s.project_id and st.name = v.stage_name;
+
+insert into public.section_progress (section_id, stage_id, progress, updated_at, updated_by)
+select distinct on (u.section_id, u.stage_id) u.section_id, u.stage_id, u.new_progress, u.created_at, u.created_by
+from public.progress_updates u
+order by u.section_id, u.stage_id, u.created_at desc;
+
+-- Assignments and attendance (dev) — add-assignments-attendance
+-- Entered as HCM so the override and the audit entries name a person.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000005","role":"authenticated"}', false);
+
+-- Kediri – Pare crew. Eko was fit at the start (P3K expiring) and is expired
+-- now, so he is marked red. Slamet (TKBT 2 expired) stays unassigned.
+insert into public.assignments (employee_id, project_id, position_id, start_date)
+select e.id, p.id, e.position_id, p.start_date + v.start_offset
+from (values
+  ('AJ-0102', 0),
+  ('AJ-0103', 15),
+  ('AJ-0105', 0),
+  ('AJ-0106', 0),
+  ('AJ-0107', 0),
+  ('AJ-0109', 0)
+) as v(employee_no, start_offset)
+join public.employees e on e.employee_no = v.employee_no
+join public.projects p on p.id = '60000000-0000-4000-8000-000000000001';
+
+-- Driver without SIM B1 on the Tuban repair: saved with an override.
+insert into public.assignments (employee_id, project_id, position_id, start_date, override_reason)
+select e.id, p.id, e.position_id, p.start_date,
+       'SIM B1 sedang diperpanjang; surat keterangan Satlantas terlampir di berkas karyawan.'
+from public.employees e
+join public.projects p on p.id = '60000000-0000-4000-8000-000000000003'
+where e.employee_no = 'AJ-0108';
+
+-- Field attendance for the last five days (today is left for the Lapangan check).
+insert into public.attendance_days (project_id, work_date)
+select '60000000-0000-4000-8000-000000000001', d::date
+from generate_series(public.today_wib() - 5, public.today_wib() - 1, interval '1 day') as d;
+
+insert into public.attendance (employee_id, work_date, status, overtime_hours, project_id)
+select a.employee_id, d::date,
+  case
+    when e.employee_no = 'AJ-0106' and d::date = public.today_wib() - 2 then 'sick'
+    when e.employee_no = 'AJ-0107' and d::date = public.today_wib() - 4 then 'permit'
+    else 'present'
+  end,
+  case when e.employee_no in ('AJ-0103', 'AJ-0105') and d::date in (public.today_wib() - 1, public.today_wib() - 3) then 2 else 0 end,
+  a.project_id
+from public.assignments a
+join public.employees e on e.id = a.employee_id
+cross join generate_series(public.today_wib() - 5, public.today_wib() - 1, interval '1 day') as d
+where a.project_id = '60000000-0000-4000-8000-000000000001';
+
+-- Office attendance for the last three days.
+insert into public.attendance (employee_id, work_date, status, project_id)
+select e.id, d::date,
+  case when e.employee_no = 'AJ-0005' and d::date = public.today_wib() - 1 then 'leave' else 'present' end,
+  null
+from public.employees e
+cross join generate_series(public.today_wib() - 3, public.today_wib() - 1, interval '1 day') as d
+where e.work_type = 'office' and e.is_active;
+
+select set_config('request.jwt.claims', '', false);
+
+-- Daily reports (dev) — add-daily-reports
+-- Kediri – Pare has reports for the last four days; Tuban has none for
+-- yesterday, so it shows as missing.
+insert into public.daily_reports (
+  id, project_id, report_date, status, no_activity, no_activity_reason,
+  weather_morning, weather_midday, weather_afternoon, effective_hours, safety_briefing, briefing_participants,
+  equipment_used, plan_tomorrow, submitted_by, submitted_at, reviewed_by, reviewed_at
+) values
+  ('80000000-0000-4000-8000-000000000001', '60000000-0000-4000-8000-000000000001', public.today_wib() - 4, 'reviewed',
+   false, null, 'clear', 'clear', 'cloudy', 8, true, 6, 'Winch 5 ton, puller-tensioner',
+   'Lanjut sagging T.08–T.10', '00000000-0000-4000-8000-000000000007', now() - interval '4 days',
+   '00000000-0000-4000-8000-000000000006', now() - interval '3 days'),
+  ('80000000-0000-4000-8000-000000000002', '60000000-0000-4000-8000-000000000001', public.today_wib() - 3, 'reviewed',
+   true, 'Hujan lebat sepanjang hari, pekerjaan di ketinggian dihentikan', 'heavy_rain', 'heavy_rain', 'heavy_rain',
+   null, false, null, null, 'Lanjut tarik konduktor S-03 bila cuaca membaik', '00000000-0000-4000-8000-000000000007',
+   now() - interval '3 days', '00000000-0000-4000-8000-000000000006', now() - interval '2 days'),
+  ('80000000-0000-4000-8000-000000000003', '60000000-0000-4000-8000-000000000001', public.today_wib() - 2, 'submitted',
+   false, null, 'clear', 'rain', 'cloudy', 6, true, 6, 'Puller-tensioner, drum stand',
+   'Tarik konduktor T.15–T.16', '00000000-0000-4000-8000-000000000007', now() - interval '2 days', null, null),
+  ('80000000-0000-4000-8000-000000000004', '60000000-0000-4000-8000-000000000001', public.today_wib() - 1, 'submitted',
+   false, null, 'cloudy', 'cloudy', 'clear', 7, true, 6, 'Puller-tensioner',
+   'Persiapan sagging S-03', '00000000-0000-4000-8000-000000000007', now() - interval '1 day', null, null);
+
+insert into public.daily_report_activities (report_id, section_id, stage_id, progress_after, notes, sort_order)
+select v.report_id::uuid, s.id, st.id, v.progress, v.notes, v.sort_order
+from (values
+  ('80000000-0000-4000-8000-000000000001', '70000000-0000-4000-8000-000000000002', 'Sagging', 40, 'Sagging T.06–T.08', 1),
+  ('80000000-0000-4000-8000-000000000003', '70000000-0000-4000-8000-000000000003', 'Penarikan Konduktor', 50, 'Konduktor T.12–T.15', 1),
+  ('80000000-0000-4000-8000-000000000004', '70000000-0000-4000-8000-000000000003', 'Penarikan Konduktor', 50, 'Persiapan tarik T.15–T.16', 1)
+) as v(report_id, section_id, stage_name, progress, notes, sort_order)
+join public.project_sections s on s.id = v.section_id::uuid
+join public.project_stages st on st.project_id = s.project_id and st.name = v.stage_name;
+
+insert into public.daily_report_obstacles (report_id, category, description, sort_order) values
+  ('80000000-0000-4000-8000-000000000001', 'row_land', 'Warga meminta ganti rugi tanaman di bawah T.09', 1),
+  ('80000000-0000-4000-8000-000000000003', 'row_land', 'Negosiasi ROW T.16 belum selesai', 1),
+  ('80000000-0000-4000-8000-000000000003', 'weather', 'Hujan siang, pekerjaan berhenti 2 jam', 2),
+  ('80000000-0000-4000-8000-000000000004', 'material_late', 'Klem suspensi belum datang', 1);
+
+-- The seeded progress steps of those days came from these reports.
+update public.progress_updates u
+set source = 'daily_report', daily_report_id = r.id
+from public.daily_reports r
+join public.daily_report_activities a on a.report_id = r.id
+where u.section_id = a.section_id
+  and u.stage_id = a.stage_id
+  and u.new_progress = a.progress_after
+  and (u.created_at at time zone 'Asia/Jakarta')::date = r.report_date;
+
+-- Equipment and delivery notes (dev) — add-equipment-mobilization
+-- Created through the functions as Operasional (and received as Lukman), then
+-- the movement times are moved back so stays and rentals have history.
+insert into public.suppliers (name, category, contact_name, phone, payment_term_days) values
+  ('CV Sarana Stringing', 'equipment_rental', 'Hendra Saputra', '081333221100', 30);
+
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000006","role":"authenticated"}', false);
+
+do $$
+declare
+  warehouse uuid := (select id from public.locations where code = 'GDG-LMG');
+  site uuid := (select location_id from public.projects where id = '60000000-0000-4000-8000-000000000001');
+  main_category uuid := (select id from public.item_categories where kind = 'tool' and name = 'Mesin Utama');
+  aux_category uuid := (select id from public.item_categories where kind = 'tool' and name = 'Alat Bantu');
+  rental uuid := (select id from public.suppliers where name = 'CV Sarana Stringing');
+  puller uuid;
+  tensioner uuid;
+  pulley uuid;
+  come_along uuid;
+  first_note uuid;
+  second_note uuid;
+begin
+  puller := public.create_tool(jsonb_build_object('code', 'PL-01', 'name', 'Puller hidrolik 5 ton', 'category_id', main_category,
+    'tracking', 'unit', 'serial_no', 'PT-2019-0042'), warehouse, 'good', 1);
+  tensioner := public.create_tool(jsonb_build_object('code', 'TN-01', 'name', 'Tensioner 2×3 ton', 'category_id', main_category,
+    'tracking', 'unit', 'serial_no', 'TS-2021-0117', 'ownership', 'rented', 'supplier_id', rental,
+    'rental_rate', 750000, 'rental_period', 'day'), warehouse, 'good', 1);
+  perform public.create_tool(jsonb_build_object('code', 'GS-01', 'name', 'Genset 10 kVA', 'category_id', main_category,
+    'tracking', 'unit', 'serial_no', 'GS-2020-0007'), warehouse, 'good', 1);
+  pulley := public.create_tool(jsonb_build_object('code', 'PUL-150', 'name', 'Pulley stringing block 150 kV',
+    'category_id', aux_category, 'tracking', 'quantity'), warehouse, 'good', 60);
+  come_along := public.create_tool(jsonb_build_object('code', 'CA-03', 'name', 'Come-along 3 ton',
+    'category_id', aux_category, 'tracking', 'quantity'), warehouse, 'good', 12);
+  perform public.create_tool(jsonb_build_object('code', 'RB-01', 'name', 'Running board', 'category_id', aux_category,
+    'tracking', 'quantity'), warehouse, 'good', 4);
+
+  first_note := public.send_delivery_note(
+    jsonb_build_object('from_location_id', warehouse, 'to_location_id', site, 'note_date', public.today_wib() - 42,
+      'vehicle', 'Truk L 9123 AB', 'driver', 'Andi Wijaya'),
+    jsonb_build_array(
+      jsonb_build_object('tool_id', puller, 'condition', 'good', 'quantity', 1),
+      jsonb_build_object('tool_id', tensioner, 'condition', 'good', 'quantity', 1),
+      jsonb_build_object('tool_id', pulley, 'condition', 'good', 'quantity', 30)
+    ));
+
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000007","role":"authenticated"}', false);
+  perform public.receive_delivery_note(first_note,
+    (select jsonb_agg(jsonb_build_object('line_id', id, 'received_good', quantity, 'received_damaged', 0))
+     from public.delivery_note_tool_lines where note_id = first_note),
+    'Diterima lengkap');
+  perform public.change_tool_condition(pulley, site, 'good', 'damaged', 2, 'Bearing pecah saat penarikan pilot wire');
+
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000006","role":"authenticated"}', false);
+  second_note := public.send_delivery_note(
+    jsonb_build_object('from_location_id', warehouse, 'to_location_id', site, 'note_date', public.today_wib() - 1,
+      'vehicle', 'Pick-up L 8812 CD', 'driver', 'Andi Wijaya', 'notes', 'Tambahan untuk S-03 dan S-04'),
+    jsonb_build_array(
+      jsonb_build_object('tool_id', pulley, 'condition', 'good', 'quantity', 10),
+      jsonb_build_object('tool_id', come_along, 'condition', 'good', 'quantity', 2)
+    ));
+
+  update public.tool_movements set created_at = now() - interval '90 days' where kind = 'opening';
+  update public.tool_movements set created_at = now() - interval '42 days' where delivery_note_id = first_note and kind = 'send';
+  update public.tool_movements set created_at = now() - interval '40 days' where delivery_note_id = first_note and kind = 'receive';
+  update public.tool_movements set created_at = now() - interval '10 days' where kind = 'condition';
+  update public.tool_movements set created_at = now() - interval '1 day' where delivery_note_id = second_note;
+  update public.delivery_notes set sent_at = now() - interval '42 days', received_at = now() - interval '40 days'
+  where id = first_note;
+  update public.delivery_notes set sent_at = now() - interval '1 day' where id = second_note;
+end;
+$$;
+
+select set_config('request.jwt.claims', '', false);

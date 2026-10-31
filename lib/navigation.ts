@@ -1,10 +1,17 @@
 import {
   BadgeCheckIcon,
+  CalendarCheckIcon,
+  ClipboardListIcon,
+  TruckIcon,
+  WrenchIcon,
+  UserPlusIcon,
+  UserRoundCheckIcon,
   Building2Icon,
   ChartColumnIcon,
   DatabaseIcon,
   FileTextIcon,
   FileUpIcon,
+  FolderKanbanIcon,
   GraduationCapIcon,
   HomeIcon,
   IdCardIcon,
@@ -62,8 +69,40 @@ export const NAV_GROUPS: NavGroup[] = [
       },
     ],
   },
-  { label: "Proyek", items: [] },
-  { label: "Operasional", items: [] },
+  {
+    label: "Proyek",
+    items: [
+      {
+        title: "Daftar Proyek",
+        href: "/projects",
+        icon: FolderKanbanIcon,
+        roles: ["super_admin", "director", "marketing", "finance", "hcm", "operations"],
+      },
+    ],
+  },
+  {
+    label: "Operasional",
+    items: [
+      {
+        title: "Laporan Harian",
+        href: "/operations/daily-reports",
+        icon: ClipboardListIcon,
+        roles: ["super_admin", "director", "operations"],
+      },
+      {
+        title: "Alat",
+        href: "/operations/tools",
+        icon: WrenchIcon,
+        roles: ["super_admin", "director", "finance", "operations"],
+      },
+      {
+        title: "Surat Jalan",
+        href: "/operations/delivery-notes",
+        icon: TruckIcon,
+        roles: ["super_admin", "director", "finance", "operations"],
+      },
+    ],
+  },
   { label: "Keuangan", items: [] },
   {
     label: "SDM",
@@ -92,6 +131,27 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: ListChecksIcon,
         roles: ["super_admin", "director", "hcm", "operations"],
       },
+      {
+        title: "Penugasan",
+        href: "/hr/assignments",
+        icon: UserRoundCheckIcon,
+        roles: ["super_admin", "director", "hcm", "operations"],
+      },
+      {
+        title: "Absensi",
+        href: "/hr/attendance",
+        icon: CalendarCheckIcon,
+        roles: ["super_admin", "director", "finance", "hcm", "operations"],
+      },
+    ],
+  },
+  {
+    label: "Lapangan",
+    items: [
+      { title: "Absensi Hari Ini", href: "/field/attendance", icon: CalendarCheckIcon, roles: ["field"] },
+      { title: "Laporan Harian", href: "/field/daily-reports/new", icon: ClipboardListIcon, roles: ["field"] },
+      { title: "Surat Jalan", href: "/operations/delivery-notes", icon: TruckIcon, roles: ["field"] },
+      { title: "Tambah Pekerja Lokal", href: "/field/workers/new", icon: UserPlusIcon, roles: ["field"] },
     ],
   },
   {
@@ -125,7 +185,7 @@ export const NAV_GROUPS: NavGroup[] = [
         title: "Impor Data",
         href: "/settings/import",
         icon: FileUpIcon,
-        roles: ["super_admin", "director", "hcm", "marketing", "finance"],
+        roles: ["super_admin", "director", "hcm", "marketing", "finance", "operations"],
       },
       {
         title: "Log Audit",

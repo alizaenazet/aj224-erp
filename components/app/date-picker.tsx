@@ -1,7 +1,6 @@
 "use client";
 
 import { format, parseISO } from "date-fns";
-import { id as dateFnsId } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { id as dayPickerId } from "react-day-picker/locale";
@@ -12,6 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { formatDate } from "@/lib/format";
 
 function toDate(value: string | null | undefined) {
   if (!value) return undefined;
@@ -71,7 +71,7 @@ export function DatePicker({
           data-empty={!selected}
         >
           <CalendarIcon />
-          {selected ? format(selected, "d MMM yyyy", { locale: dateFnsId }) : placeholder}
+          {selected ? formatDate(value) : placeholder}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

@@ -67,6 +67,14 @@ export async function deleteCertificate(certificateId: string): Promise<ActionRe
     .eq("entity_type", "employee_certificate")
     .eq("entity_id", parsed.data);
 
+  // The scan goes first: its access rules need the certificate to still exist.
+  if (scans?.length) {
+    const { error: removeError } = await supabase.storage.from(scans[0].bucket).remove(scans.map((scan) => scan.path));
+    if (removeError) return { ok: false, error: "Scan sertifikat gagal dihapus." };
+    const { error: scanError } = await supabase.from("attachments").delete().in("id", scans.map((scan) => scan.id));
+    if (scanError) return { ok: false, error: dbErrorMessage(scanError) };
+  }
+
   const { data, error } = await supabase
     .from("employee_certificates")
     .delete()
@@ -75,11 +83,6 @@ export async function deleteCertificate(certificateId: string): Promise<ActionRe
   if (error) return { ok: false, error: dbErrorMessage(error) };
   const row = data?.[0];
   if (!row) return { ok: false, error: "Sertifikat tidak ditemukan." };
-
-  if (scans?.length) {
-    await supabase.from("attachments").delete().in("id", scans.map((scan) => scan.id));
-    await supabase.storage.from(scans[0].bucket).remove(scans.map((scan) => scan.path));
-  }
 
   revalidateCertificates(row.employee_id);
   return { ok: true, message: "Sertifikat dihapus." };

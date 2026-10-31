@@ -1,6 +1,6 @@
 "use client";
 
-import { HistoryIcon, PencilIcon, UserCheckIcon, UserXIcon } from "lucide-react";
+import { BadgeCheckIcon, HistoryIcon, PencilIcon, UserCheckIcon, UserXIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -26,10 +26,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
-import { setEmployeeActive } from "@/lib/employees/actions";
+import { setEmployeeActive, verifyEmployee } from "@/lib/employees/actions";
 
 type EmployeeActionsProps = {
-  employee: { id: string; full_name: string; is_active: boolean; join_date: string };
+  employee: {
+    id: string;
+    full_name: string;
+    is_active: boolean;
+    join_date: string;
+    verification_status: "verified" | "pending";
+  };
   /** Today in WIB (yyyy-MM-dd): latest allowed exit date. */
   today: string;
   canManage: boolean;
@@ -41,6 +47,7 @@ export function EmployeeActions({ employee, today, canManage, canViewHistory }: 
   const [deactivateOpen, setDeactivateOpen] = useState(false);
   const [reactivateOpen, setReactivateOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [verifyOpen, setVerifyOpen] = useState(false);
   const [exitDate, setExitDate] = useState<string | null>(today);
   const [pending, setPending] = useState(false);
 
@@ -57,8 +64,23 @@ export function EmployeeActions({ employee, today, canManage, canViewHistory }: 
     setReactivateOpen(false);
   }
 
+  async function verify() {
+    setPending(true);
+    const result = await verifyEmployee(employee.id);
+    setPending(false);
+    setVerifyOpen(false);
+    if (result.ok) toast.success(result.message);
+    else toast.error(result.error);
+  }
+
   return (
     <>
+      {canManage && employee.verification_status === "pending" ? (
+        <Button onClick={() => setVerifyOpen(true)}>
+          <BadgeCheckIcon />
+          Verifikasi
+        </Button>
+      ) : null}
       {canViewHistory ? (
         <Button variant="outline" onClick={() => setHistoryOpen(true)}>
           <HistoryIcon />
@@ -122,6 +144,30 @@ export function EmployeeActions({ employee, today, canManage, canViewHistory }: 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={verifyOpen} onOpenChange={setVerifyOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Verifikasi {employee.full_name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Pastikan data pekerja lokal ini sudah dilengkapi dan benar. Setelah diverifikasi, gajinya dapat masuk
+              payroll.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pending}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={pending}
+              onClick={(event) => {
+                event.preventDefault();
+                void verify();
+              }}
+            >
+              Verifikasi
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={reactivateOpen} onOpenChange={setReactivateOpen}>
         <AlertDialogContent>

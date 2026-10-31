@@ -3,6 +3,7 @@ import "server-only";
 import {
   EMPLOYEE_STATUSES,
   EMPLOYMENT_STATUSES,
+  VERIFICATION_STATUSES,
   WORK_TYPES,
   type Employee,
   type EmployeeRow,
@@ -30,6 +31,7 @@ export function parseEmployeeListParams(raw: RawSearchParams) {
     employment: parseEnum(raw.employment, EMPLOYMENT_STATUSES),
     position: isUuid(position) ? position : null,
     status: parseEnum(raw.status, EMPLOYEE_STATUSES),
+    verification: parseEnum(raw.verification, VERIFICATION_STATUSES),
     sort: parseSort(raw.sort, EMPLOYEE_SORTS, { column: "full_name", ascending: true }),
     page: parsePage(raw.page),
   };
@@ -38,7 +40,7 @@ export function parseEmployeeListParams(raw: RawSearchParams) {
 export type EmployeeListParams = ReturnType<typeof parseEmployeeListParams>;
 
 const LIST_SELECT =
-  "id, employee_no, full_name, nik_ktp, phone, work_type, employment_status, join_date, exit_date, is_active, position:positions(name)";
+  "id, employee_no, full_name, nik_ktp, phone, work_type, employment_status, join_date, exit_date, is_active, verification_status, position:positions(name)";
 
 /** Karyawan list (HCM-01); `page: null` returns all rows (export). */
 export async function queryEmployees(params: EmployeeListParams, { page }: { page: number | null }) {
@@ -55,6 +57,7 @@ export async function queryEmployees(params: EmployeeListParams, { page }: { pag
   if (params.employment) query = query.eq("employment_status", params.employment);
   if (params.position) query = query.eq("position_id", params.position);
   if (params.status) query = query.eq("is_active", params.status === "active");
+  if (params.verification) query = query.eq("verification_status", params.verification);
 
   query = query
     .order(params.sort.column, { ascending: params.sort.ascending })

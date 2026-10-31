@@ -49,7 +49,7 @@ Every row SHALL be validated with the same rules as the matching form, plus refe
 - **THEN** 10 employees are created, the 2 failed rows are listed with reasons, and importing the same file again fails all rows as already existing
 
 ### Requirement: Templates and permissions
-This change SHALL provide the templates Karyawan with optional pay settings (HCM), Sertifikat karyawan (HCM), Klien with one optional contact per row (Super Admin, Marketing), Supplier (Super Admin, Finance) and Riwayat tender (Marketing); a user SHALL see and use only the templates of data they may manage. (UMM-13, PRD §13, §16)
+The import SHALL provide the templates Karyawan with optional pay settings (HCM), Sertifikat karyawan (HCM), Absensi (HCM), Klien with one optional contact per row (Super Admin, Marketing), Supplier (Super Admin, Finance), Riwayat tender (Marketing), Seksi Tarik by project code (Operasional) and Alat with opening stock (Operasional); a user SHALL see and use only the templates of data they may manage. (UMM-13, PRD §13, §16, PRJ-05, HCM-10, ALT-01)
 
 #### Scenario: Role-scoped templates
 - **WHEN** a Finance user opens Impor Data
@@ -62,6 +62,18 @@ This change SHALL provide the templates Karyawan with optional pay settings (HCM
 #### Scenario: Lost without reason
 - **WHEN** a tender row has status Kalah without Alasan Kalah
 - **THEN** that row fails with a reason that the lost reason is required
+
+#### Scenario: Sections by project code
+- **WHEN** Operasional imports rows for project PRJ/AJ224/2026/001 with sections S-05 and S-06, and a row whose section code already exists in that project
+- **THEN** S-05 and S-06 are created with their kms and the duplicate row fails with a reason
+
+#### Scenario: Office attendance
+- **WHEN** HCM imports attendance rows for AJ-0005 on two dates with Hadir and Cuti, and a row with a future date
+- **THEN** the two records are saved and the future-dated row fails with a reason
+
+#### Scenario: Tools with opening stock
+- **WHEN** Operasional imports a Per Jumlah row "PUL-01 Pulley 30 Baik at GDG-LMG" and a Per Unit row with quantity 2
+- **THEN** the pulley is created with 30 Baik at Gudang Lamongan and the Per Unit row fails with a reason
 
 ### Requirement: Import history
 Every import SHALL be recorded with user, time, template, file name, total, imported and failed rows and the first failures; users SHALL see their own imports and Super Admin and Direktur SHALL see all. (UMM-13, UMM-08)

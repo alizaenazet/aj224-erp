@@ -8,7 +8,23 @@ import {
   type WorkType,
 } from "@/lib/employees/labels";
 import { CLIENT_KIND_LABELS, type ClientKind } from "@/lib/clients/labels";
+import {
+  REPORT_STATUS_LABELS,
+  WEATHER_LABELS,
+  type ReportStatus,
+  type Weather,
+} from "@/lib/daily-reports/labels";
 import { formatDate, formatRupiah } from "@/lib/format";
+import {
+  PROJECT_STATUS_LABELS,
+  TERM_CONDITION_LABELS,
+  TERM_KIND_LABELS,
+  TERM_STATUS_LABELS,
+  type ProjectStatus,
+  type TermCondition,
+  type TermKind,
+  type TermStatus,
+} from "@/lib/projects/labels";
 import {
   LOST_REASON_LABELS,
   TENDER_STATUS_LABELS,
@@ -28,6 +44,17 @@ export const AUDIT_TABLE_LABELS: Record<string, string> = {
   employee_certificates: "Sertifikat Karyawan",
   clients: "Klien",
   tenders: "Tender",
+  projects: "Proyek",
+  project_contracts: "Kontrak Proyek",
+  project_addenda: "Addendum",
+  project_terms: "Termin",
+  project_budgets: "RAB Proyek",
+  project_sections: "Seksi Tarik",
+  project_stages: "Tahapan Proyek",
+  assignments: "Penugasan",
+  daily_reports: "Laporan Harian",
+  tools: "Alat",
+  delivery_notes: "Surat Jalan",
 };
 
 /** Audit tables whose entries only Direktur may read (PRD §6, SQL is_pay_table). */
@@ -39,7 +66,22 @@ export const PAY_AUDIT_TABLES = ["employee_pay_settings"];
  */
 export const AUDIT_REFS: Record<
   string,
-  Record<string, { table: "positions" | "employees" | "certificate_types" | "clients"; column: string }>
+  Record<
+    string,
+    {
+      table:
+        | "positions"
+        | "employees"
+        | "certificate_types"
+        | "clients"
+        | "cost_categories"
+        | "projects"
+        | "item_categories"
+        | "suppliers"
+        | "locations";
+      column: string;
+    }
+  >
 > = {
   employees: { position_id: { table: "positions", column: "name" } },
   profiles: { employee_id: { table: "employees", column: "full_name" } },
@@ -48,6 +90,24 @@ export const AUDIT_REFS: Record<
     certificate_type_id: { table: "certificate_types", column: "name" },
   },
   tenders: { client_id: { table: "clients", column: "name" } },
+  projects: { client_id: { table: "clients", column: "name" } },
+  project_budgets: { cost_category_id: { table: "cost_categories", column: "name" } },
+  project_sections: { project_id: { table: "projects", column: "code" } },
+  project_stages: { project_id: { table: "projects", column: "code" } },
+  daily_reports: { project_id: { table: "projects", column: "code" } },
+  tools: {
+    category_id: { table: "item_categories", column: "name" },
+    supplier_id: { table: "suppliers", column: "name" },
+  },
+  delivery_notes: {
+    from_location_id: { table: "locations", column: "name" },
+    to_location_id: { table: "locations", column: "name" },
+  },
+  assignments: {
+    employee_id: { table: "employees", column: "full_name" },
+    project_id: { table: "projects", column: "code" },
+    position_id: { table: "positions", column: "name" },
+  },
 };
 
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
@@ -129,6 +189,11 @@ const AUDIT_FIELDS: Record<string, Record<string, FieldSpec>> = {
     bank_account_number: { label: "No. rekening" },
     bank_account_holder: { label: "Atas nama" },
     bpjs_number: { label: "No. BPJS" },
+    verification_status: {
+      label: "Verifikasi",
+      format: (value) => (value === "pending" ? "Menunggu Verifikasi" : "Terverifikasi"),
+    },
+    registered_by: { label: "Didaftarkan oleh", format: () => "Lapangan" },
   },
   employee_pay_settings: {
     pay_type: {
@@ -186,6 +251,144 @@ const AUDIT_FIELDS: Record<string, Record<string, FieldSpec>> = {
     winner_name: { label: "Pemenang" },
     winner_price: { label: "Harga pemenang", format: asRupiah },
     notes: { label: "Catatan" },
+  },
+  projects: {
+    name: { label: "Nama proyek" },
+    client_id: { label: "Klien" },
+    end_owner: { label: "Pemilik akhir" },
+    site: { label: "Lokasi pekerjaan" },
+    voltage_kv: { label: "Tegangan", format: (value) => `${value} kV` },
+    length_kms: { label: "Panjang (kms)" },
+    tower_count: { label: "Jumlah tower" },
+    start_date: { label: "Tanggal mulai", format: asDate },
+    target_finish_date: { label: "Target selesai", format: asDate },
+    finish_date: { label: "Target selesai berlaku", format: asDate },
+    status: { label: "Status", format: (value) => PROJECT_STATUS_LABELS[value as ProjectStatus] ?? String(value) },
+    notes: { label: "Catatan" },
+  },
+  project_contracts: {
+    contract_no: { label: "Nomor kontrak" },
+    contract_date: { label: "Tanggal kontrak", format: asDate },
+    contract_value: { label: "Nilai kontrak", format: asRupiah },
+    ppn_applicable: { label: "Kena PPN", format: (value) => (value ? "Ya" : "Tidak") },
+    maintenance_months: { label: "Masa pemeliharaan (bulan)" },
+    scope: { label: "Lingkup" },
+  },
+  project_addenda: {
+    addendum_no: { label: "Nomor" },
+    addendum_date: { label: "Tanggal", format: asDate },
+    new_value: { label: "Nilai baru", format: asRupiah },
+    new_finish_date: { label: "Target selesai baru", format: asDate },
+  },
+  project_terms: {
+    name: { label: "Nama termin" },
+    kind: { label: "Jenis", format: (value) => TERM_KIND_LABELS[value as TermKind] ?? String(value) },
+    percent: { label: "Persentase", format: (value) => `${value}%` },
+    amount: { label: "Nilai", format: asRupiah },
+    condition_type: {
+      label: "Syarat",
+      format: (value) => TERM_CONDITION_LABELS[value as TermCondition] ?? String(value),
+    },
+    condition_progress: { label: "Progres syarat", format: (value) => `${value}%` },
+    condition_date: { label: "Tanggal syarat", format: asDate },
+    status: { label: "Status", format: (value) => TERM_STATUS_LABELS[value as TermStatus] ?? String(value) },
+    ready_at: { label: "Siap ditagih", format: (value) => formatDate(String(value)) },
+    ready_by: { label: "Ditandai oleh", format: () => "diubah" },
+  },
+  project_budgets: {
+    cost_category_id: { label: "Kategori" },
+    amount: { label: "Anggaran", format: asRupiah },
+    notes: { label: "Catatan" },
+  },
+  project_sections: {
+    project_id: { label: "Proyek" },
+    code: { label: "Kode seksi" },
+    tower_from: { label: "Tower awal" },
+    tower_to: { label: "Tower akhir" },
+    tower_count: { label: "Jumlah tower" },
+    length_km: { label: "Panjang (km)" },
+    circuits: { label: "Jumlah sirkuit" },
+    kms: { label: "kms" },
+    planned_start: { label: "Rencana mulai", format: asDate },
+    planned_finish: { label: "Rencana selesai", format: asDate },
+    sort_order: { label: "Urutan" },
+    notes: { label: "Catatan" },
+  },
+  project_stages: {
+    project_id: { label: "Proyek" },
+    name: { label: "Tahapan" },
+    weight: { label: "Bobot" },
+    sort_order: { label: "Urutan" },
+  },
+  assignments: {
+    employee_id: { label: "Karyawan" },
+    project_id: { label: "Proyek" },
+    position_id: { label: "Jabatan" },
+    start_date: { label: "Tanggal mulai", format: asDate },
+    end_date: { label: "Tanggal selesai", format: asDate },
+    notes: { label: "Catatan" },
+    override_reason: { label: "Alasan override" },
+    overridden_by: { label: "Override oleh", format: () => "HCM" },
+    overridden_at: { label: "Waktu override", format: (value) => formatDate(String(value)) },
+    missing_certificates: { label: "Sertifikat tidak lengkap" },
+  },
+  daily_reports: {
+    project_id: { label: "Proyek" },
+    report_date: { label: "Tanggal", format: asDate },
+    status: {
+      label: "Status",
+      format: (value) => REPORT_STATUS_LABELS[value as ReportStatus] ?? String(value),
+    },
+    no_activity: { label: "Tidak ada kegiatan", format: (value) => (value ? "Ya" : "Tidak") },
+    no_activity_reason: { label: "Alasan" },
+    weather_morning: { label: "Cuaca pagi", format: (value) => WEATHER_LABELS[value as Weather] ?? "—" },
+    weather_midday: { label: "Cuaca siang", format: (value) => WEATHER_LABELS[value as Weather] ?? "—" },
+    weather_afternoon: { label: "Cuaca sore", format: (value) => WEATHER_LABELS[value as Weather] ?? "—" },
+    effective_hours: { label: "Jam kerja efektif" },
+    safety_briefing: { label: "Safety briefing", format: (value) => (value ? "Ya" : "Tidak") },
+    briefing_participants: { label: "Peserta briefing" },
+    equipment_used: { label: "Alat utama" },
+    plan_tomorrow: { label: "Rencana esok" },
+    notes: { label: "Catatan" },
+    submitted_by: { label: "Dikirim oleh", format: () => "diubah" },
+    submitted_at: { label: "Dikirim", format: (value) => formatDate(String(value)) },
+    reviewed_by: { label: "Diperiksa oleh", format: () => "Operasional" },
+    reviewed_at: { label: "Diperiksa", format: (value) => formatDate(String(value)) },
+    review_comment: { label: "Komentar pemeriksaan" },
+  },
+  tools: {
+    code: { label: "Kode" },
+    name: { label: "Nama" },
+    category_id: { label: "Kategori" },
+    tracking: { label: "Pelacakan", format: (value) => (value === "unit" ? "Per Unit" : "Per Jumlah") },
+    serial_no: { label: "No. seri" },
+    ownership: { label: "Kepemilikan", format: (value) => (value === "rented" ? "Sewa" : "Milik Sendiri") },
+    supplier_id: { label: "Supplier" },
+    rental_rate: { label: "Tarif sewa", format: asRupiah },
+    rental_period: { label: "Periode sewa", format: (value) => (value === "month" ? "per bulan" : "per hari") },
+    notes: { label: "Catatan" },
+    is_active: { label: "Status", format: asActive },
+    stock_adjustment: { label: "Penyesuaian stok" },
+  },
+  delivery_notes: {
+    number: { label: "Nomor" },
+    from_location_id: { label: "Asal" },
+    to_location_id: { label: "Tujuan" },
+    note_date: { label: "Tanggal", format: asDate },
+    vehicle: { label: "Kendaraan" },
+    driver: { label: "Sopir" },
+    notes: { label: "Catatan" },
+    status: {
+      label: "Status",
+      format: (value) => ({ sent: "Dikirim", received: "Diterima", cancelled: "Batal" })[String(value)] ?? String(value),
+    },
+    sent_by: { label: "Dikirim oleh", format: () => "Operasional" },
+    sent_at: { label: "Dikirim", format: (value) => formatDate(String(value)) },
+    received_by: { label: "Diterima oleh", format: () => "diubah" },
+    received_at: { label: "Diterima", format: (value) => formatDate(String(value)) },
+    receipt_note: { label: "Catatan penerimaan" },
+    cancelled_at: { label: "Dibatalkan", format: (value) => formatDate(String(value)) },
+    cancel_reason: { label: "Alasan batal" },
   },
 };
 

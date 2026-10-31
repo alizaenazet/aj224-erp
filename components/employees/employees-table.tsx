@@ -6,6 +6,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { Badge } from "@/components/ui/badge";
 import {
   EMPLOYMENT_STATUS_LABELS,
+  VERIFICATION_LABELS,
   WORK_TYPE_LABELS,
   type EmployeeRow,
 } from "@/lib/employees/labels";
@@ -39,9 +40,14 @@ const COLUMNS: ColumnDef<EmployeeRow, unknown>[] = [
     id: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Badge variant={row.original.is_active ? "secondary" : "destructive"}>
-        {row.original.is_active ? "Aktif" : "Nonaktif"}
-      </Badge>
+      <div className="flex flex-wrap gap-1">
+        <Badge variant={row.original.is_active ? "secondary" : "destructive"}>
+          {row.original.is_active ? "Aktif" : "Nonaktif"}
+        </Badge>
+        {row.original.verification_status === "pending" ? (
+          <Badge variant="warning">{VERIFICATION_LABELS.pending}</Badge>
+        ) : null}
+      </div>
     ),
   },
 ];

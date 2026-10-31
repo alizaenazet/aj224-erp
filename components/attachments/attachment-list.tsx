@@ -87,7 +87,7 @@ export function AttachmentList({
   return (
     <div className="flex flex-col gap-4">
       {canManage ? (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <Select value={category} onValueChange={setCategory}>
             <SelectTrigger className="w-full sm:w-48" aria-label="Kategori berkas">
               <SelectValue />

@@ -6,6 +6,7 @@ import { APP_ROLES, ROLE_LABELS, type AppRole } from "@/lib/auth/roles";
 import {
   EMPLOYEE_VIEW_ROLES,
   EMPLOYMENT_STATUS_LABELS,
+  VERIFICATION_LABELS,
   WORK_TYPE_LABELS,
   type EmployeeRow,
 } from "@/lib/employees/labels";
@@ -25,6 +26,36 @@ import {
   queryClients,
   queryFollowUps,
 } from "@/lib/clients/queries";
+import { PROJECT_STATUS_LABELS, PROJECT_VIEW_ROLES, type ProjectRow } from "@/lib/projects/labels";
+import { getProject, parseProjectListParams, queryProjects } from "@/lib/projects/queries";
+import { PROGRESS_VIEW_ROLES } from "@/lib/progress/labels";
+import {
+  ASSIGNMENT_STATE_LABELS,
+  ASSIGNMENT_VIEW_ROLES,
+  CERT_STATE_LABELS,
+  type AssignmentRow,
+} from "@/lib/assignments/labels";
+import { parseAssignmentListParams, queryAssignments } from "@/lib/assignments/queries";
+import { ATTENDANCE_OFFICE_VIEW_ROLES, type RecapRow } from "@/lib/attendance/labels";
+import { parseRecapParams, queryRecap } from "@/lib/attendance/queries";
+import {
+  REPORT_OFFICE_VIEW_ROLES,
+  REPORT_STATUS_LABELS,
+  describeWeather,
+  type ReportRow,
+} from "@/lib/daily-reports/labels";
+import { parseReportListParams, queryReports } from "@/lib/daily-reports/queries";
+import {
+  EQUIPMENT_OFFICE_VIEW_ROLES,
+  EQUIPMENT_VIEW_ROLES,
+  NOTE_STATUS_LABELS,
+  OWNERSHIP_LABELS,
+  TRACKING_LABELS,
+  type NoteRow,
+  type ToolRow,
+} from "@/lib/equipment/labels";
+import { parseNoteListParams, parseToolListParams, queryNotes, queryTools } from "@/lib/equipment/queries";
+import { progressCells, projectProgress, projectSections, projectStages } from "@/lib/progress/queries";
 import { TENDER_STATUS_LABELS, type TenderRow } from "@/lib/tenders/labels";
 import { parseTenderListParams, queryTenders } from "@/lib/tenders/queries";
 import type { RawSearchParams } from "@/lib/list/params";
@@ -59,8 +90,11 @@ type ExportDefinition<T> = {
   fileBase: string;
   sheetName: string;
   columns: ExportColumn<T>[];
-  /** Rows matching the list's URL params (same query as the page). */
-  load: (params: RawSearchParams) => Promise<{ rows: T[]; count: number }>;
+  /**
+   * Rows matching the list's URL params (same query as the page). An export
+   * whose columns depend on the data (e.g. a project's stages) returns them here.
+   */
+  load: (params: RawSearchParams) => Promise<{ rows: T[]; count: number; columns?: ExportColumn<T>[] }>;
 };
 
 function defineExport<T>(definition: ExportDefinition<T>) {
@@ -134,6 +168,7 @@ export const EXPORTS: Record<string, ExportDefinition<unknown>> = {
       { header: "Tanggal Masuk", value: (row) => row.join_date, type: "date", width: 14 },
       { header: "Tanggal Keluar", value: (row) => row.exit_date, type: "date", width: 14 },
       { header: "Status", value: (row) => (row.is_active ? "Aktif" : "Nonaktif") },
+      { header: "Verifikasi", value: (row) => VERIFICATION_LABELS[row.verification_status], width: 20 },
     ],
     load: (raw) => queryEmployees(parseEmployeeListParams(raw), { page: null }),
   }),
@@ -244,6 +279,170 @@ export const EXPORTS: Record<string, ExportDefinition<unknown>> = {
       { header: "Win Rate Klien", value: (row) => formatRate(row.client_stats?.win_rate_count) },
     ],
     load: (raw) => queryTenders(parseTenderListParams(raw), { page: null }),
+  }),
+
+  projects: defineExport<ProjectRow>({
+    roles: PROJECT_VIEW_ROLES,
+    fileBase: "proyek",
+    sheetName: "Proyek",
+    columns: [
+      { header: "Kode", value: (row) => row.code, width: 20 },
+      { header: "Nama Proyek", value: (row) => row.name, width: 40 },
+      { header: "Klien", value: (row) => row.client_name, width: 34 },
+      { header: "Status", value: (row) => PROJECT_STATUS_LABELS[row.status] },
+      { header: "Tanggal Mulai", value: (row) => row.start_date, type: "date", width: 14 },
+      { header: "Target Selesai", value: (row) => row.finish_date, type: "date", width: 14 },
+      // Null for roles without contract or progress access (RLS), so the cell stays empty.
+      { header: "Progres (%)", value: (row) => (row.progress === null ? null : Math.round(Number(row.progress) * 10) / 10), type: "number" },
+      { header: "Nilai Kontrak", value: (row) => row.contract_value, type: "rupiah", width: 20 },
+    ],
+    load: (raw) => queryProjects(parseProjectListParams(raw), { page: null }),
+  }),
+
+  assignments: defineExport<AssignmentRow>({
+    roles: ASSIGNMENT_VIEW_ROLES,
+    fileBase: "penugasan",
+    sheetName: "Penugasan",
+    columns: [
+      { header: "NIK Karyawan", value: (row) => row.employee_no, width: 16 },
+      { header: "Nama", value: (row) => row.employee_name, width: 26 },
+      { header: "Proyek", value: (row) => row.project_code, width: 20 },
+      { header: "Jabatan", value: (row) => row.position_name, width: 20 },
+      { header: "Mulai", value: (row) => row.start_date, type: "date", width: 14 },
+      { header: "Selesai", value: (row) => row.end_date, type: "date", width: 14 },
+      { header: "Status", value: (row) => ASSIGNMENT_STATE_LABELS[row.state] },
+      { header: "Sertifikat", value: (row) => (row.cert_state ? CERT_STATE_LABELS[row.cert_state] : "Tidak wajib"), width: 22 },
+      { header: "Keterangan Sertifikat", value: (row) => row.cert_issues, width: 30 },
+      { header: "Alasan Override", value: (row) => row.override_reason, width: 36 },
+    ],
+    load: (raw) => queryAssignments(parseAssignmentListParams(raw), { page: null }),
+  }),
+
+  // HCM-11 recap per employee and project for the chosen period.
+  "attendance-recap": defineExport<RecapRow>({
+    roles: ATTENDANCE_OFFICE_VIEW_ROLES,
+    fileBase: "rekap-absensi",
+    sheetName: "Rekap Absensi",
+    columns: [
+      { header: "NIK Karyawan", value: (row) => row.employee_no, width: 16 },
+      { header: "Nama", value: (row) => row.employee_name, width: 26 },
+      { header: "Proyek", value: (row) => row.project_code ?? "Kantor", width: 20 },
+      { header: "Hadir", value: (row) => row.present, type: "number" },
+      { header: "Izin", value: (row) => row.permit, type: "number" },
+      { header: "Sakit", value: (row) => row.sick, type: "number" },
+      { header: "Cuti", value: (row) => row.leave, type: "number" },
+      { header: "Alpa", value: (row) => row.absent, type: "number" },
+      { header: "Libur", value: (row) => row.off, type: "number" },
+      { header: "Jam Lembur", value: (row) => row.overtime_hours, type: "number" },
+    ],
+    load: (raw) => queryRecap(parseRecapParams(raw)),
+  }),
+
+  "daily-reports": defineExport<ReportRow>({
+    roles: REPORT_OFFICE_VIEW_ROLES,
+    fileBase: "laporan-harian",
+    sheetName: "Laporan Harian",
+    columns: [
+      { header: "Tanggal", value: (row) => row.report_date, type: "date", width: 14 },
+      { header: "Proyek", value: (row) => row.project_code, width: 20 },
+      { header: "Status", value: (row) => REPORT_STATUS_LABELS[row.status], width: 16 },
+      { header: "Kegiatan", value: (row) => (row.no_activity ? `Tidak ada: ${row.no_activity_reason ?? ""}` : "Ada"), width: 30 },
+      { header: "Cuaca (pagi · siang · sore)", value: (row) => describeWeather(row), width: 30 },
+      { header: "Jam Kerja", value: (row) => row.effective_hours, type: "number" },
+      { header: "Tenaga Kerja", value: (row) => row.workforce, type: "number" },
+      { header: "Aktivitas", value: (row) => row.activity_count, type: "number" },
+      { header: "Kendala", value: (row) => row.obstacle_count, type: "number" },
+      { header: "Foto", value: (row) => row.photo_count, type: "number" },
+      { header: "Rencana Esok", value: (row) => row.plan_tomorrow, width: 36 },
+    ],
+    load: (raw) => queryReports(parseReportListParams(raw), { page: null }),
+  }),
+
+  tools: defineExport<ToolRow>({
+    roles: EQUIPMENT_OFFICE_VIEW_ROLES,
+    fileBase: "alat",
+    sheetName: "Alat",
+    columns: [
+      { header: "Kode", value: (row) => row.code, width: 14 },
+      { header: "Nama", value: (row) => row.name, width: 30 },
+      { header: "Kategori", value: (row) => row.category_name, width: 16 },
+      { header: "Pelacakan", value: (row) => TRACKING_LABELS[row.tracking] },
+      { header: "No. Seri", value: (row) => row.serial_no, width: 16 },
+      { header: "Kepemilikan", value: (row) => OWNERSHIP_LABELS[row.ownership] },
+      { header: "Supplier", value: (row) => row.supplier_name, width: 22 },
+      { header: "Baik", value: (row) => row.good, type: "number" },
+      { header: "Rusak", value: (row) => row.damaged, type: "number" },
+      { header: "Dalam Perbaikan", value: (row) => row.repair, type: "number" },
+      { header: "Hilang", value: (row) => row.lost, type: "number" },
+      { header: "Dalam Perjalanan", value: (row) => row.in_transit, type: "number" },
+      { header: "Total", value: (row) => row.total, type: "number" },
+    ],
+    load: (raw) => queryTools(parseToolListParams(raw), { page: null }),
+  }),
+
+  "delivery-notes": defineExport<NoteRow>({
+    roles: EQUIPMENT_VIEW_ROLES,
+    fileBase: "surat-jalan",
+    sheetName: "Surat Jalan",
+    columns: [
+      { header: "Nomor", value: (row) => row.number, width: 22 },
+      { header: "Tanggal", value: (row) => row.note_date, type: "date", width: 14 },
+      { header: "Asal", value: (row) => row.from_location, width: 28 },
+      { header: "Tujuan", value: (row) => row.to_location, width: 28 },
+      { header: "Kendaraan", value: (row) => row.vehicle, width: 16 },
+      { header: "Sopir", value: (row) => row.driver, width: 16 },
+      { header: "Status", value: (row) => NOTE_STATUS_LABELS[row.status] },
+      { header: "Jumlah Baris", value: (row) => row.line_count, type: "number" },
+      { header: "Alasan Batal", value: (row) => row.cancel_reason, width: 24 },
+    ],
+    load: (raw) => queryNotes(parseNoteListParams(raw), { page: null }),
+  }),
+
+  // PRJ-07 progress matrix of one project (?project=<id>); one column per stage.
+  "project-progress": defineExport<Record<string, unknown>>({
+    roles: PROGRESS_VIEW_ROLES,
+    fileBase: "progres-proyek",
+    sheetName: "Matriks Progres",
+    columns: [],
+    load: async (raw) => {
+      const project = await getProject(typeof raw.project === "string" ? raw.project : "");
+      if (!project) return { rows: [], count: 0 };
+      const [stages, sections, summary] = await Promise.all([
+        projectStages(project.id),
+        projectSections(project.id),
+        projectProgress(project.id),
+      ]);
+      const cells = await progressCells(sections.map((section) => section.id));
+      const rows: Record<string, unknown>[] = sections.map((section) => ({
+        code: section.code,
+        towers: `${section.tower_from} – ${section.tower_to}`,
+        kms: section.kms,
+        ...Object.fromEntries(stages.map((stage) => [stage.id, cells[section.id]?.[stage.id] ?? 0])),
+        progress: Math.round(section.progress * 100) / 100,
+        planned: Math.round(section.planned_progress * 100) / 100,
+      }));
+      rows.push({
+        code: `Total ${project.code}`,
+        towers: null,
+        kms: summary?.total_kms ?? 0,
+        progress: summary ? Math.round(summary.progress * 100) / 100 : 0,
+        planned: summary ? Math.round(summary.planned_progress * 100) / 100 : 0,
+      });
+      const columns: ExportColumn<Record<string, unknown>>[] = [
+        { header: "Seksi", value: (row) => row.code as string, width: 22 },
+        { header: "Tower", value: (row) => row.towers as string | null, width: 14 },
+        { header: "kms", value: (row) => row.kms as number, type: "number" },
+        ...stages.map((stage) => ({
+          header: `${stage.name} (${stage.weight}) %`,
+          value: (row: Record<string, unknown>) => row[stage.id] as number | undefined,
+          type: "number" as const,
+          width: 16,
+        })),
+        { header: "Progres Seksi (%)", value: (row) => row.progress as number, type: "number", width: 16 },
+        { header: "Rencana (%)", value: (row) => row.planned as number, type: "number", width: 14 },
+      ];
+      return { rows, count: rows.length, columns };
+    },
   }),
 
   // One export per master-data list: its list columns plus Status.

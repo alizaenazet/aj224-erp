@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { ContentSkeleton } from "@/components/app/content-skeleton";
+import { FieldHome } from "@/components/field/field-home";
 import { PageHeader } from "@/components/app/page-header";
 import {
   Card,
@@ -23,6 +24,7 @@ export default function HomePage() {
 
 async function Welcome() {
   const profile = await requireProfile();
+  if (profile.role === "field") return <FieldHome />;
 
   return (
     <Card>

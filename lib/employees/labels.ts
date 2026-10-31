@@ -24,6 +24,14 @@ export const EMPLOYEE_STATUS_LABELS: Record<(typeof EMPLOYEE_STATUSES)[number], 
   inactive: "Nonaktif",
 };
 
+/** HCM-12: local workers added from the field wait for HCM verification. */
+export const VERIFICATION_STATUSES = ["verified", "pending"] as const;
+export type VerificationStatus = (typeof VERIFICATION_STATUSES)[number];
+export const VERIFICATION_LABELS: Record<VerificationStatus, string> = {
+  verified: "Terverifikasi",
+  pending: "Menunggu Verifikasi",
+};
+
 export const PAY_TYPES = ["daily", "monthly"] as const;
 export type PayType = (typeof PAY_TYPES)[number];
 export const PAY_TYPE_LABELS: Record<PayType, string> = {
@@ -49,6 +57,7 @@ export type EmployeeRow = {
   join_date: string;
   exit_date: string | null;
   is_active: boolean;
+  verification_status: VerificationStatus;
   position: { name: string } | null;
 };
 

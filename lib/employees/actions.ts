@@ -165,3 +165,27 @@ export async function savePaySettings(input: {
   revalidateEmployee(id.data);
   return { ok: true, message: "Pengaturan gaji disimpan." };
 }
+
+/** HCM confirms a local worker added from the field (HCM-12); audited by the employees trigger. */
+export async function verifyEmployee(employeeId: string): Promise<ActionResult> {
+  const auth = await assertRole(["hcm"]);
+  if (!auth.ok) return auth;
+
+  const id = z.uuid().safeParse(employeeId);
+  if (!id.success) return { ok: false, error: "Karyawan tidak valid." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("employees")
+    .update({ verification_status: "verified" })
+    .eq("id", id.data)
+    .eq("verification_status", "pending")
+    .select("id");
+  if (error) return { ok: false, error: dbErrorMessage(error) };
+  if (!data?.length) return { ok: false, error: "Karyawan sudah terverifikasi atau tidak ditemukan." };
+
+  revalidatePath("/hr/employees");
+  revalidatePath(`/hr/employees/${id.data}`);
+  revalidatePath("/hr/attendance", "layout");
+  return { ok: true, message: "Karyawan terverifikasi." };
+}

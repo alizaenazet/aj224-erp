@@ -12,9 +12,9 @@ export const CERTIFICATE_STATUS_LABELS: Record<RequirementStatus, string> = {
   missing: "Belum ada",
 };
 
-export const CERTIFICATE_STATUS_VARIANTS: Record<RequirementStatus, "secondary" | "default" | "destructive"> = {
+export const CERTIFICATE_STATUS_VARIANTS: Record<RequirementStatus, "secondary" | "warning" | "destructive"> = {
   valid: "secondary",
-  expiring: "default",
+  expiring: "warning",
   expired: "destructive",
   missing: "destructive",
 };

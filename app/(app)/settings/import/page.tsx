@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Impor Data" };
 
-const IMPORT_ROLES = ["super_admin", "director", "hcm", "marketing", "finance"] as const;
+const IMPORT_ROLES = ["super_admin", "director", "hcm", "marketing", "finance", "operations"] as const;
 
 export default function ImportPage() {
   return (

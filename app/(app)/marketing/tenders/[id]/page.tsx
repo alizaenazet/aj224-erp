@@ -1,3 +1,4 @@
+import { FolderKanbanIcon, FolderPlusIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,6 +11,7 @@ import { ActivityLog } from "@/components/clients/activity-log";
 import { TenderActions } from "@/components/tenders/tender-actions";
 import { TenderStatusBadge, TenderUrgencyBadge } from "@/components/tenders/tender-badges";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { listAttachments } from "@/lib/attachments/queries";
@@ -18,6 +20,7 @@ import { requireRole } from "@/lib/auth/session";
 import { MARKETING_VIEW_ROLES, formatRate } from "@/lib/clients/labels";
 import { listActivities } from "@/lib/clients/queries";
 import { formatDate, formatDateTime, formatNumber, formatRupiah, todayWib } from "@/lib/format";
+import { projectForTender } from "@/lib/projects/queries";
 import { LOST_REASON_LABELS, formatPercent } from "@/lib/tenders/labels";
 import { getTender, tenderRevisions } from "@/lib/tenders/queries";
 
@@ -42,10 +45,11 @@ async function TenderDetailContent({ params }: { params: Params }) {
 
   const today = todayWib();
   const canManage = profile.role === "marketing";
-  const [revisions, documents, activities] = await Promise.all([
+  const [revisions, documents, activities, project] = await Promise.all([
     tenderRevisions(tender.id),
     listAttachments("tender", tender.id),
     listActivities({ tenderId: tender.id }),
+    tender.status === "won" ? projectForTender(tender.id) : Promise.resolve(null),
   ]);
 
   const data: [string, string][] = [
@@ -88,12 +92,29 @@ async function TenderDetailContent({ params }: { params: Params }) {
         title={tender.name}
         description={tender.client?.name ?? undefined}
         actions={
-          <TenderActions
-            tender={tender}
-            today={today}
-            canManage={canManage}
-            canViewHistory={hasAnyRole(profile.role, ["super_admin", "director"])}
-          />
+          <>
+            {project ? (
+              <Button asChild variant="outline">
+                <Link href={`/projects/${project.id}`}>
+                  <FolderKanbanIcon />
+                  Proyek {project.code}
+                </Link>
+              </Button>
+            ) : tender.status === "won" && canManage ? (
+              <Button asChild>
+                <Link href={`/projects/new?tender=${tender.id}`}>
+                  <FolderPlusIcon />
+                  Buat Proyek
+                </Link>
+              </Button>
+            ) : null}
+            <TenderActions
+              tender={tender}
+              today={today}
+              canManage={canManage}
+              canViewHistory={hasAnyRole(profile.role, ["super_admin", "director"])}
+            />
+          </>
         }
       />
       <div className="flex flex-wrap gap-2">

@@ -1,7 +1,6 @@
 "use client";
 
 import { format, parseISO } from "date-fns";
-import { id as dateFnsId } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import type { DateRange } from "react-day-picker";
@@ -14,9 +13,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { formatDate } from "@/lib/format";
 
 const toParam = (date: Date) => format(date, "yyyy-MM-dd");
-const label = (date: Date) => format(date, "d MMM yyyy", { locale: dateFnsId });
+const label = (date: Date) => formatDate(toParam(date));
 
 function fromParam(value: string | null) {
   if (!value) return undefined;

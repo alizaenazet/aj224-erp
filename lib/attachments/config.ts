@@ -48,6 +48,46 @@ export const ATTACHMENT_ENTITIES = {
     categories: { scan: "Scan sertifikat" } as Record<string, string>,
     single: ["scan"],
   },
+  project: {
+    bucket: "project-files",
+    path: (id: string) => `/projects/${id}/documents`,
+    categories: {
+      contract: "Kontrak",
+      addendum: "Addendum",
+      bap: "BAP",
+      bast: "BAST",
+      drawing: "Gambar",
+      permit: "Izin",
+      correspondence: "Korespondensi",
+      other: "Lainnya",
+    } as Record<string, string>,
+    single: [] as string[],
+  },
+  attendance_day: {
+    bucket: "project-files",
+    // Sheet photos show on the field and SDM attendance pages.
+    path: () => "/hr/attendance",
+    categories: { sheet: "Lembar absensi" } as Record<string, string>,
+    single: [] as string[],
+  },
+  daily_report: {
+    bucket: "project-files",
+    path: (id: string) => `/operations/daily-reports/${id}`,
+    categories: { photo: "Foto kegiatan" } as Record<string, string>,
+    single: [] as string[],
+  },
+  tool: {
+    bucket: "project-files",
+    path: (id: string) => `/operations/tools/${id}`,
+    categories: { photo: "Foto alat", condition: "Foto kondisi" } as Record<string, string>,
+    single: ["photo"],
+  },
+  delivery_note: {
+    bucket: "project-files",
+    path: (id: string) => `/operations/delivery-notes/${id}`,
+    categories: { receipt: "Foto penerimaan/selisih" } as Record<string, string>,
+    single: [] as string[],
+  },
   tender: {
     bucket: "marketing-files",
     path: (id: string) => `/marketing/tenders/${id}`,

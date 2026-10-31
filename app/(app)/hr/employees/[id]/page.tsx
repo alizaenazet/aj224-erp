@@ -27,6 +27,7 @@ import {
   EMPLOYEE_VIEW_ROLES,
   EMPLOYMENT_STATUS_LABELS,
   PAY_VIEW_ROLES,
+  VERIFICATION_LABELS,
   WORK_TYPE_LABELS,
   type Employee,
 } from "@/lib/employees/labels";
@@ -117,6 +118,9 @@ async function EmployeeDetailContent({
         <Badge variant={employee.is_active ? "secondary" : "destructive"}>
           {employee.is_active ? "Aktif" : `Nonaktif sejak ${formatDate(employee.exit_date)}`}
         </Badge>
+        {employee.verification_status === "pending" ? (
+          <Badge variant="warning">{VERIFICATION_LABELS.pending}</Badge>
+        ) : null}
         <Badge variant="outline">{WORK_TYPE_LABELS[employee.work_type]}</Badge>
         <Badge variant="outline">{EMPLOYMENT_STATUS_LABELS[employee.employment_status]}</Badge>
       </div>

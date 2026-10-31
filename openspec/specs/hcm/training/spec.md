@@ -17,7 +17,7 @@ HCM SHALL record trainings with name, kind (Internal or Eksternal), organizer, s
 - **THEN** he is not added twice
 
 ### Requirement: Certificates from passed participants
-When a participant's result becomes Lulus and the training produces a certificate type, the system SHALL create a certificate for that employee with issue date = the training's end date (or start date when there is none), expiry = issue date + the type's validity (none for lifetime types), issuer = the organizer, and a link to the training; its number and scan SHALL be completable later. Changing the result away from Lulus SHALL remove that automatically created certificate. (HCM-07)
+When a participant's result becomes Lulus and the training produces a certificate type, the system SHALL create a certificate for that employee with issue date = the training's end date (or start date when there is none), expiry = issue date + the type's validity (none for lifetime types), issuer = the organizer, and a link to the training; its number and scan SHALL be completable later. Changing the result away from Lulus SHALL remove that automatically created certificate. Changing the training's organizer or dates SHALL update the certificates it issued; adding a certificate type SHALL issue certificates to participants who already passed; changing the certificate type SHALL be refused while certificates from the training exist. (HCM-07)
 
 #### Scenario: Passed participant gets certificate
 - **WHEN** HCM marks Slamet as Lulus in the TKBT Tingkat 2 training ending 5 Nov 2026
@@ -30,6 +30,18 @@ When a participant's result becomes Lulus and the training produces a certificat
 #### Scenario: Training without certificate type
 - **WHEN** a participant passes an internal workshop without a certificate type
 - **THEN** no certificate is created
+
+#### Scenario: Training dates corrected
+- **WHEN** HCM moves the end date of the TKBT Tingkat 2 training from 23 Sep to 24 Sep 2026 after Budi passed
+- **THEN** Budi's certificate from it is issued 24 Sep 2026 and expires 24 Sep 2031
+
+#### Scenario: Certificate type added later
+- **WHEN** HCM sets P3K as the certificate type of a workshop where Joko already passed
+- **THEN** Joko gets a P3K certificate linked to that workshop
+
+#### Scenario: Type change refused
+- **WHEN** HCM changes the certificate type of a training that has issued certificates
+- **THEN** the change is refused, asking to change the Lulus results first
 
 ### Requirement: Training needs
 SDM → Kebutuhan Pelatihan SHALL list active employees whose position requires a certificate they do not have (Belum ada), whose current certificate is Kedaluwarsa, or is Segera Kedaluwarsa, grouped per certificate type with the employee, position, status and expiry date; HCM SHALL select employees in a group and start a new training for that certificate type with them as participants. (HCM-08, PRD §11.5)

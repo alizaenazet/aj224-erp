@@ -23,11 +23,11 @@ export async function GET(
   }
 
   const raw = Object.fromEntries(request.nextUrl.searchParams.entries());
-  const { rows, count } = await definition.load(raw);
+  const { rows, count, columns } = await definition.load(raw);
 
   const buffer = await buildWorkbook({
     sheetName: definition.sheetName,
-    columns: definition.columns,
+    columns: columns ?? definition.columns,
     rows,
     truncated: count > MAX_ROWS,
   });

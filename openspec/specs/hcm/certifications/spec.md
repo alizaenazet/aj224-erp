@@ -39,14 +39,18 @@ Among one employee's certificates of the same type, the one with the latest expi
 - **THEN** the new one is current with status Berlaku and the old one is shown as Diperbarui
 
 ### Requirement: Certificate scan
-HCM SHALL attach a scanned file (PDF, JPG or PNG) to a certificate; users who may view the certificate SHALL open it through a temporary link. (HCM-03, UMM-03)
+HCM SHALL attach a scanned file (PDF, JPG or PNG) to a certificate; users who may view the certificate SHALL open it through a temporary link. Deleting a certificate SHALL remove its scan file and attachment record. (HCM-03, UMM-03)
 
 #### Scenario: Attach scan
 - **WHEN** HCM uploads a PDF scan for Budi's TKBT certificate
 - **THEN** the certificate shows a link that opens the scan
 
+#### Scenario: Delete certificate with scan
+- **WHEN** HCM deletes Dedi's TKBT Tingkat 1 certificate that has a scan
+- **THEN** the certificate, its attachment record and the stored file are gone
+
 ### Requirement: Certificate access by role
-HCM SHALL manage certificates; Super Admin, Direktur and Operasional SHALL view them; Finance and Marketing SHALL NOT see certificates. (PRD §13)
+HCM SHALL manage certificates; Super Admin, Direktur and Operasional SHALL view them; Lapangan SHALL view the certificates of the crew of their own active projects; Finance and Marketing SHALL NOT see certificates. (PRD §13)
 
 #### Scenario: Operasional views only
 - **WHEN** an Operasional user opens Sertifikat
@@ -55,6 +59,10 @@ HCM SHALL manage certificates; Super Admin, Direktur and Operasional SHALL view 
 #### Scenario: Finance has no access
 - **WHEN** a Finance user opens `/hr/certificates` or queries certificates through the API
 - **THEN** they see "Akses ditolak" and no rows are returned
+
+#### Scenario: Lapangan crew certificates
+- **WHEN** Lapangan queries certificates through the API
+- **THEN** only certificates of employees assigned to their active projects are returned
 
 ### Requirement: Fit for position
 The employee page SHALL list each certificate required by the employee's position with its current status, and SHALL show the employee as Layak Tugas when every required certificate is Berlaku or Segera Kedaluwarsa, otherwise Belum Layak Tugas with the missing or expired types. (PRD §11.5, MST-06)
@@ -75,7 +83,7 @@ SDM → Sertifikat SHALL list the current certificate per employee and type for 
 - **THEN** only Segera Kedaluwarsa and Kedaluwarsa certificates are listed, soonest expiry first, and the export contains the same rows
 
 ### Requirement: Expiry reminders
-The daily check at 06:00 WIB SHALL notify HCM users once when a current certificate of an active employee enters the Segera Kedaluwarsa window and once when it becomes Kedaluwarsa; the notification SHALL name the employee, certificate type and expiry date and link to the certificate list. (HCM-04, UMM-06)
+The daily check at 06:00 WIB SHALL notify HCM users once when a current certificate of an active employee enters the Segera Kedaluwarsa window and once when it becomes Kedaluwarsa; when that employee is on an active assignment, Operasional users SHALL be notified as well, with the project code. Each notification SHALL name the employee, certificate type and expiry date and link to the certificate list. (HCM-04, UMM-06)
 
 #### Scenario: Reminder at 60 days
 - **WHEN** the daily check runs and Lukman's TKBT Tingkat 1 expires in 30 days
@@ -84,6 +92,10 @@ The daily check at 06:00 WIB SHALL notify HCM users once when a current certific
 #### Scenario: Reminder at expiry
 - **WHEN** the daily check runs after Slamet's TKBT Tingkat 2 expired
 - **THEN** each HCM user gets one notification "Sertifikat kedaluwarsa" for it
+
+#### Scenario: Operasional reminded for assigned crew
+- **WHEN** the daily check runs and Eko's P3K has expired while he is assigned to PRJ/AJ224/2026/001
+- **THEN** each Operasional user gets one notification "Sertifikat kedaluwarsa" naming Eko, P3K and PRJ/AJ224/2026/001, while Slamet (not assigned) gives Operasional no notification
 
 #### Scenario: Renewed certificate not reminded
 - **WHEN** an expired certificate has been superseded by a valid one of the same type
