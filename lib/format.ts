@@ -40,6 +40,15 @@ export function formatRupiah(value: number | null | undefined) {
   return rupiahFormatter.format(value).replace(/ /g, " ");
 }
 
+/** "Rp 18,3 M", "Rp 6 jt": for narrow places (phone dashboards). */
+export function formatRupiahShort(value: number | null | undefined) {
+  if (value === null || value === undefined) return "—";
+  const units: [number, string][] = [[1e12, "T"], [1e9, "M"], [1e6, "jt"], [1e3, "rb"]];
+  const [size, unit] = units.find(([limit]) => Math.abs(value) >= limit) ?? [1, ""];
+  const amount = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 }).format(value / size);
+  return `Rp ${amount}${unit ? ` ${unit}` : ""}`;
+}
+
 /** "4,2" — decimal comma, thousands dot. */
 export function formatNumber(value: number | null | undefined, fractionDigits = 0) {
   if (value === null || value === undefined) return "—";

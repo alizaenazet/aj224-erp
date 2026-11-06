@@ -69,7 +69,7 @@ const COLUMNS: ColumnDef<ToolRow, unknown>[] = [
     ),
   },
   {
-    id: "name",
+    id: "name", meta: { mobile: "title" },
     header: "Alat",
     cell: ({ row }) => (
       <div className="flex max-w-80 flex-col gap-1 whitespace-normal">

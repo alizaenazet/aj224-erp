@@ -99,7 +99,7 @@ export function TendersTable({ tenders, today }: { tenders: TenderRow[]; today: 
         header: "Win Rate Klien",
         cell: ({ row }) => formatRate(row.original.client_stats?.win_rate_count),
       },
-      { id: "status", header: "Status", cell: ({ row }) => <TenderStatusBadge status={row.original.status} /> },
+      { id: "status", meta: { mobile: "aside" }, header: "Status", cell: ({ row }) => <TenderStatusBadge status={row.original.status} /> },
       { id: "pic", header: "PIC", cell: ({ row }) => row.original.pic_name ?? "—" },
     ],
     [today],

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AccessDenied } from "@/components/app/access-denied";
 import { ContentSkeleton } from "@/components/app/content-skeleton";
+import { MobileList } from "@/components/app/mobile-list";
 import { PageHeader } from "@/components/app/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
@@ -48,53 +49,89 @@ async function RentalsContent() {
             </EmptyHeader>
           </Empty>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Alat</TableHead>
-                <TableHead>Proyek</TableHead>
-                <TableHead>Supplier</TableHead>
-                <TableHead className="text-right">Jumlah</TableHead>
-                <TableHead>Tiba</TableHead>
-                <TableHead className="text-right">Hari</TableHead>
-                <TableHead className="text-right">Tarif</TableHead>
-                <TableHead className="text-right">Estimasi biaya</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rentals.map((row) => (
-                <TableRow key={`${row.tool_id}-${row.project_id}`}>
-                  <TableCell>
-                    <Link href={`/operations/tools/${row.tool_id}`} className="font-medium underline-offset-4 hover:underline">
-                      {row.code}
-                    </Link>
-                    <div className="text-xs text-muted-foreground">{row.name}</div>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    <Link href={`/projects/${row.project_id}/equipment`} className="underline-offset-4 hover:underline">
-                      {row.project_code}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{row.supplier_name}</TableCell>
-                  <TableCell className="text-right tabular-nums">{row.quantity}</TableCell>
-                  <TableCell className="whitespace-nowrap">{formatDate(row.arrived_at)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{row.days}</TableCell>
-                  <TableCell className="text-right whitespace-nowrap">
-                    {formatRupiah(row.rental_rate)} {RENTAL_PERIOD_LABELS[row.rental_period as RentalPeriod]}
-                  </TableCell>
-                  <TableCell className="text-right font-medium whitespace-nowrap">{formatRupiah(row.estimated_cost)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={7} className="font-medium">
-                  Total estimasi
-                </TableCell>
-                <TableCell className="text-right font-medium whitespace-nowrap">{formatRupiah(total)}</TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Alat</TableHead>
+                    <TableHead>Proyek</TableHead>
+                    <TableHead>Supplier</TableHead>
+                    <TableHead className="text-right">Jumlah</TableHead>
+                    <TableHead>Tiba</TableHead>
+                    <TableHead className="text-right">Hari</TableHead>
+                    <TableHead className="text-right">Tarif</TableHead>
+                    <TableHead className="text-right">Estimasi biaya</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rentals.map((row) => (
+                    <TableRow key={`${row.tool_id}-${row.project_id}`}>
+                      <TableCell>
+                        <Link href={`/operations/tools/${row.tool_id}`} className="font-medium underline-offset-4 hover:underline">
+                          {row.code}
+                        </Link>
+                        <div className="text-xs text-muted-foreground">{row.name}</div>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <Link href={`/projects/${row.project_id}/equipment`} className="underline-offset-4 hover:underline">
+                          {row.project_code}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{row.supplier_name}</TableCell>
+                      <TableCell className="text-right tabular-nums">{row.quantity}</TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDate(row.arrived_at)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{row.days}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        {formatRupiah(row.rental_rate)} {RENTAL_PERIOD_LABELS[row.rental_period as RentalPeriod]}
+                      </TableCell>
+                      <TableCell className="text-right font-medium whitespace-nowrap">{formatRupiah(row.estimated_cost)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableFooter>
+                  <TableRow>
+                    <TableCell colSpan={7} className="font-medium">
+                      Total estimasi
+                    </TableCell>
+                    <TableCell className="text-right font-medium whitespace-nowrap">{formatRupiah(total)}</TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </div>
+            <MobileList
+              rows={[
+                ...rentals.map((row) => ({
+                  key: `${row.tool_id}-${row.project_id}`,
+                  title: (
+                    <>
+                      <Link href={`/operations/tools/${row.tool_id}`} className="underline-offset-4 hover:underline">
+                        {row.code}
+                      </Link>
+                      <span className="text-xs font-normal text-muted-foreground">{row.name}</span>
+                    </>
+                  ),
+                  fields: [
+                    {
+                      key: "project",
+                      label: "Proyek",
+                      value: (
+                        <Link href={`/projects/${row.project_id}/equipment`} className="underline-offset-4 hover:underline">
+                          {row.project_code}
+                        </Link>
+                      ),
+                    },
+                    { key: "supplier", label: "Supplier", value: row.supplier_name },
+                    { key: "quantity", label: "Jumlah", value: row.quantity },
+                    { key: "arrived", label: "Tiba", value: `${formatDate(row.arrived_at)} · ${row.days} hari` },
+                    { key: "rate", label: "Tarif", value: `${formatRupiah(row.rental_rate)} ${RENTAL_PERIOD_LABELS[row.rental_period as RentalPeriod]}` },
+                    { key: "cost", label: "Estimasi biaya", value: <span className="font-medium">{formatRupiah(row.estimated_cost)}</span> },
+                  ],
+                })),
+                { key: "total", title: "Total estimasi", fields: [{ key: "total", label: "Estimasi biaya", value: formatRupiah(total), full: true }] },
+              ]}
+            />
+          </>
         )}
       </CardContent>
     </Card>

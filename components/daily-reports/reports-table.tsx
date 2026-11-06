@@ -57,7 +57,7 @@ export function ReportsToolbar({
 export function ReportsTable({ reports, showProject = true }: { reports: ReportRow[]; showProject?: boolean }) {
   const columns: ColumnDef<ReportRow, unknown>[] = [
     {
-      id: "report_date",
+      id: "report_date", meta: { mobile: "title" },
       header: "Tanggal",
       cell: ({ row }) => (
         <Link
@@ -71,7 +71,7 @@ export function ReportsTable({ reports, showProject = true }: { reports: ReportR
     ...(showProject
       ? [
           {
-            id: "project_code",
+            id: "project_code", meta: { mobile: "title" },
             header: "Proyek",
             cell: ({ row }: { row: { original: ReportRow } }) => (
               <span className="whitespace-nowrap">{row.original.project_code}</span>
@@ -80,7 +80,7 @@ export function ReportsTable({ reports, showProject = true }: { reports: ReportR
         ]
       : []),
     {
-      id: "status",
+      id: "status", meta: { mobile: "aside" },
       header: "Status",
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-1">

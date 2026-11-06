@@ -34,7 +34,7 @@ const COLUMNS: ColumnDef<AuditEntry, unknown>[] = [
     cell: ({ row }) => <Badge variant="outline">{auditActionLabel(row.original.action)}</Badge>,
   },
   {
-    id: "changes",
+    id: "changes", meta: { mobile: "full" },
     header: "Perubahan",
     cell: ({ row }) => (
       <div className="whitespace-normal">

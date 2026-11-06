@@ -1,3 +1,4 @@
+import { MobileList } from "@/components/app/mobile-list";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatRupiah } from "@/lib/format";
 import type { AgingRow } from "@/lib/invoices/labels";
@@ -17,43 +18,62 @@ export function AgingTable({ rows }: { rows: AgingRow[] }) {
   const sum = (key: (typeof COLUMNS)[number][0]) => rows.reduce((total, row) => total + row[key], 0);
   const money = (value: number) => (value ? formatRupiah(value) : "—");
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Klien</TableHead>
-          <TableHead>Proyek</TableHead>
-          {COLUMNS.map(([key, label]) => (
-            <TableHead key={key} className="text-right">
-              {label}
-            </TableHead>
-          ))}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {rows.map((row) => (
-          <TableRow key={row.project_id}>
-            <TableCell className="max-w-64 whitespace-normal">{row.client_name ?? "—"}</TableCell>
-            <TableCell className="whitespace-nowrap">{row.project_code}</TableCell>
-            {COLUMNS.map(([key]) => (
-              <TableCell key={key} className={key === "total_balance" ? "text-right font-medium tabular-nums" : "text-right tabular-nums"}>
-                {money(row[key])}
-              </TableCell>
+    <>
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Klien</TableHead>
+              <TableHead>Proyek</TableHead>
+              {COLUMNS.map(([key, label]) => (
+                <TableHead key={key} className="text-right">
+                  {label}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={row.project_id}>
+                <TableCell className="max-w-64 whitespace-normal">{row.client_name ?? "—"}</TableCell>
+                <TableCell className="whitespace-nowrap">{row.project_code}</TableCell>
+                {COLUMNS.map(([key]) => (
+                  <TableCell key={key} className={key === "total_balance" ? "text-right font-medium tabular-nums" : "text-right tabular-nums"}>
+                    {money(row[key])}
+                  </TableCell>
+                ))}
+              </TableRow>
             ))}
-          </TableRow>
-        ))}
-      </TableBody>
-      <TableFooter>
-        <TableRow>
-          <TableCell colSpan={2} className="font-medium">
-            Total
-          </TableCell>
-          {COLUMNS.map(([key]) => (
-            <TableCell key={key} className="text-right font-medium tabular-nums">
-              {money(sum(key))}
-            </TableCell>
-          ))}
-        </TableRow>
-      </TableFooter>
-    </Table>
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={2} className="font-medium">
+                Total
+              </TableCell>
+              {COLUMNS.map(([key]) => (
+                <TableCell key={key} className="text-right font-medium tabular-nums">
+                  {money(sum(key))}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </div>
+      <MobileList
+        rows={[
+          ...rows.map((row) => ({
+            key: row.project_id,
+            title: (
+              <>
+                {row.client_name ?? "—"}
+                <span className="text-xs font-normal text-muted-foreground">{row.project_code}</span>
+              </>
+            ),
+            fields: COLUMNS.map(([key, label]) => ({ key, label, value: money(row[key]) })),
+          })),
+          { key: "total", title: "Total", fields: COLUMNS.map(([key, label]) => ({ key, label, value: money(sum(key)) })) },
+        ]}
+      />
+    </>
   );
 }

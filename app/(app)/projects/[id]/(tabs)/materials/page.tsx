@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { AccessDenied } from "@/components/app/access-denied";
 import { ContentSkeleton } from "@/components/app/content-skeleton";
+import { MobileList } from "@/components/app/mobile-list";
 import { ExportButton } from "@/components/data-table/export-button";
 import { ReconciliationTable } from "@/components/materials/reconciliation-table";
 import { TransactionsTable } from "@/components/materials/transactions-table";
@@ -77,35 +78,56 @@ async function ProjectMaterials({ params }: { params: Params }) {
         </CardHeader>
         <CardContent>
           {stock.some((row) => row.quantity > 0) ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Material</TableHead>
-                  <TableHead>Kepemilikan</TableHead>
-                  <TableHead className="text-right">Jumlah</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {stock
-                  .filter((row) => row.quantity > 0)
-                  .map((row) => (
-                    <TableRow key={row.material_id}>
-                      <TableCell className="max-w-72 whitespace-normal">
-                        <span className="font-medium">{row.material_code}</span>
-                        <div className="text-xs text-muted-foreground">{row.material_name}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={row.ownership === "client" ? "secondary" : "outline"}>
-                          {MATERIAL_OWNERSHIP_LABELS[row.ownership]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatQuantity(row.quantity)} {row.unit_code}
-                      </TableCell>
+            <>
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Material</TableHead>
+                      <TableHead>Kepemilikan</TableHead>
+                      <TableHead className="text-right">Jumlah</TableHead>
                     </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {stock
+                      .filter((row) => row.quantity > 0)
+                      .map((row) => (
+                        <TableRow key={row.material_id}>
+                          <TableCell className="max-w-72 whitespace-normal">
+                            <span className="font-medium">{row.material_code}</span>
+                            <div className="text-xs text-muted-foreground">{row.material_name}</div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={row.ownership === "client" ? "secondary" : "outline"}>
+                              {MATERIAL_OWNERSHIP_LABELS[row.ownership]}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {formatQuantity(row.quantity)} {row.unit_code}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <MobileList
+                rows={stock
+                  .filter((row) => row.quantity > 0)
+                  .map((row) => ({
+                    key: row.material_id,
+                    title: (
+                      <>
+                        {row.material_code}
+                        <span className="text-xs font-normal text-muted-foreground">{row.material_name}</span>
+                      </>
+                    ),
+                    aside: (
+                      <Badge variant={row.ownership === "client" ? "secondary" : "outline"}>{MATERIAL_OWNERSHIP_LABELS[row.ownership]}</Badge>
+                    ),
+                    fields: [{ key: "quantity", label: "Jumlah", value: `${formatQuantity(row.quantity)} ${row.unit_code}`, full: true }],
+                  }))}
+              />
+            </>
           ) : (
             <p className="text-sm text-muted-foreground">Belum ada material di lokasi ini.</p>
           )}

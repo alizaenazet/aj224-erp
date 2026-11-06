@@ -15,7 +15,7 @@ import { formatDate } from "@/lib/format";
 const COLUMNS: ColumnDef<EmployeeRow, unknown>[] = [
   { id: "employee_no", header: "NIK Karyawan", cell: ({ row }) => row.original.employee_no },
   {
-    id: "full_name",
+    id: "full_name", meta: { mobile: "title" },
     header: "Nama",
     cell: ({ row }) => (
       <Link href={`/hr/employees/${row.original.id}`} className="font-medium underline-offset-4 hover:underline">
@@ -37,7 +37,7 @@ const COLUMNS: ColumnDef<EmployeeRow, unknown>[] = [
   { id: "phone", header: "No. HP", cell: ({ row }) => row.original.phone ?? "—" },
   { id: "join_date", header: "Tanggal Masuk", cell: ({ row }) => formatDate(row.original.join_date) },
   {
-    id: "status",
+    id: "status", meta: { mobile: "aside" },
     header: "Status",
     cell: ({ row }) => (
       <div className="flex flex-wrap gap-1">

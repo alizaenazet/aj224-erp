@@ -53,12 +53,12 @@ async function SummaryContent({ searchParams }: { searchParams: SearchParams }) 
         filters={<DateRangeFilter placeholder={`Tahun ${today.slice(0, 4)}`} />}
         actions={<ExportButton exportKey="k3-summary" />}
       />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {tiles.map(([label, value]) => (
           <Card key={label}>
             <CardHeader>
               <CardDescription>{label}</CardDescription>
-              <CardTitle className="text-2xl tabular-nums">{value}</CardTitle>
+              <CardTitle className="text-xl tabular-nums sm:text-2xl">{value}</CardTitle>
             </CardHeader>
           </Card>
         ))}

@@ -90,12 +90,12 @@ async function ProjectProgressContent({ params }: { params: Params }) {
           <AlertDescription>Proyek sudah ditutup; seksi dan progres hanya dapat dilihat.</AlertDescription>
         </Alert>
       ) : null}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {tiles.map((tile) => (
           <Card key={tile.label}>
             <CardHeader>
               <CardDescription>{tile.label}</CardDescription>
-              <CardTitle className="text-xl whitespace-nowrap tabular-nums">{tile.value}</CardTitle>
+              <CardTitle className="text-lg tabular-nums sm:text-xl sm:whitespace-nowrap">{tile.value}</CardTitle>
             </CardHeader>
             {tile.extra ? <CardContent>{tile.extra}</CardContent> : null}
           </Card>

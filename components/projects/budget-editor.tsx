@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { MobileList } from "@/components/app/mobile-list";
 import { RupiahInput } from "@/components/app/rupiah-input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,77 +84,138 @@ export function BudgetEditor({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Kategori</TableHead>
-              <TableHead className={canManage ? "min-w-48" : "text-right"}>Anggaran</TableHead>
-              <TableHead className="text-right">Realisasi</TableHead>
-              <TableHead className="text-right">Sisa</TableHead>
-              <TableHead>% Terpakai</TableHead>
-              <TableHead className={canManage ? "min-w-48" : undefined}>Catatan</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {lines.map((line) => {
-              const budget = budgetOf(line);
-              const draft = drafts[line.cost_category_id];
-              return (
-                <TableRow key={line.cost_category_id}>
-                  <TableCell className="whitespace-normal">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{line.name}</span>
-                      <span className="text-xs text-muted-foreground">{line.code}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className={canManage ? undefined : "text-right whitespace-nowrap"}>
-                    {canManage ? (
-                      <RupiahInput
-                        value={draft.amount}
-                        onChange={(amount) => update(line.cost_category_id, { amount })}
-                      />
-                    ) : (
-                      formatRupiah(line.budget)
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right whitespace-nowrap">{formatRupiah(line.actual)}</TableCell>
-                  <TableCell className="text-right whitespace-nowrap">{formatRupiah(budget - line.actual)}</TableCell>
-                  <TableCell>
-                    <UsageBadge budget={budget} actual={line.actual} />
-                  </TableCell>
-                  <TableCell className="max-w-64 whitespace-normal">
-                    {canManage ? (
-                      <Input
-                        value={draft.notes}
-                        onChange={(event) => update(line.cost_category_id, { notes: event.target.value })}
-                        maxLength={300}
-                        aria-label={`Catatan ${line.name}`}
-                      />
-                    ) : (
-                      (line.notes ?? "—")
-                    )}
-                  </TableCell>
+        <>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Kategori</TableHead>
+                  <TableHead className={canManage ? "min-w-48" : "text-right"}>Anggaran</TableHead>
+                  <TableHead className="text-right">Realisasi</TableHead>
+                  <TableHead className="text-right">Sisa</TableHead>
+                  <TableHead>% Terpakai</TableHead>
+                  <TableHead className={canManage ? "min-w-48" : undefined}>Catatan</TableHead>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell className="font-medium">Total</TableCell>
-              <TableCell className={canManage ? "font-medium whitespace-nowrap" : "text-right font-medium whitespace-nowrap"}>
-                {formatRupiah(totalBudget)}
-              </TableCell>
-              <TableCell className="text-right font-medium whitespace-nowrap">{formatRupiah(totalActual)}</TableCell>
-              <TableCell className="text-right font-medium whitespace-nowrap">
-                {formatRupiah(totalBudget - totalActual)}
-              </TableCell>
-              <TableCell>
-                <UsageBadge budget={totalBudget} actual={totalActual} />
-              </TableCell>
-              <TableCell />
-            </TableRow>
-          </TableFooter>
-        </Table>
+              </TableHeader>
+              <TableBody>
+                {lines.map((line) => {
+                  const budget = budgetOf(line);
+                  const draft = drafts[line.cost_category_id];
+                  return (
+                    <TableRow key={line.cost_category_id}>
+                      <TableCell className="whitespace-normal">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{line.name}</span>
+                          <span className="text-xs text-muted-foreground">{line.code}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className={canManage ? undefined : "text-right whitespace-nowrap"}>
+                        {canManage ? (
+                          <RupiahInput
+                            value={draft.amount}
+                            onChange={(amount) => update(line.cost_category_id, { amount })}
+                          />
+                        ) : (
+                          formatRupiah(line.budget)
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">{formatRupiah(line.actual)}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap">{formatRupiah(budget - line.actual)}</TableCell>
+                      <TableCell>
+                        <UsageBadge budget={budget} actual={line.actual} />
+                      </TableCell>
+                      <TableCell className="max-w-64 whitespace-normal">
+                        {canManage ? (
+                          <Input
+                            value={draft.notes}
+                            onChange={(event) => update(line.cost_category_id, { notes: event.target.value })}
+                            maxLength={300}
+                            aria-label={`Catatan ${line.name}`}
+                          />
+                        ) : (
+                          (line.notes ?? "—")
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell className="font-medium">Total</TableCell>
+                  <TableCell className={canManage ? "font-medium whitespace-nowrap" : "text-right font-medium whitespace-nowrap"}>
+                    {formatRupiah(totalBudget)}
+                  </TableCell>
+                  <TableCell className="text-right font-medium whitespace-nowrap">{formatRupiah(totalActual)}</TableCell>
+                  <TableCell className="text-right font-medium whitespace-nowrap">
+                    {formatRupiah(totalBudget - totalActual)}
+                  </TableCell>
+                  <TableCell>
+                    <UsageBadge budget={totalBudget} actual={totalActual} />
+                  </TableCell>
+                  <TableCell />
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </div>
+          <MobileList
+            rows={[
+              ...lines.map((line) => {
+                const budget = budgetOf(line);
+                const draft = drafts[line.cost_category_id];
+                return {
+                  key: line.cost_category_id,
+                  title: (
+                    <>
+                      {line.name}
+                      <span className="text-xs font-normal text-muted-foreground">{line.code}</span>
+                    </>
+                  ),
+                  aside: <UsageBadge budget={budget} actual={line.actual} />,
+                  fields: [
+                    {
+                      key: "budget",
+                      label: "Anggaran",
+                      full: canManage,
+                      value: canManage ? (
+                        <RupiahInput value={draft.amount} onChange={(amount) => update(line.cost_category_id, { amount })} />
+                      ) : (
+                        formatRupiah(line.budget)
+                      ),
+                    },
+                    { key: "actual", label: "Realisasi", value: formatRupiah(line.actual) },
+                    { key: "left", label: "Sisa", value: formatRupiah(budget - line.actual) },
+                    {
+                      key: "notes",
+                      label: "Catatan",
+                      full: true,
+                      value: canManage ? (
+                        <Input
+                          value={draft.notes}
+                          onChange={(event) => update(line.cost_category_id, { notes: event.target.value })}
+                          maxLength={300}
+                          aria-label={`Catatan ${line.name}`}
+                        />
+                      ) : (
+                        (line.notes ?? "—")
+                      ),
+                    },
+                  ],
+                };
+              }),
+              {
+                key: "total",
+                title: "Total",
+                aside: <UsageBadge budget={totalBudget} actual={totalActual} />,
+                fields: [
+                  { key: "budget", label: "Anggaran", value: formatRupiah(totalBudget) },
+                  { key: "actual", label: "Realisasi", value: formatRupiah(totalActual) },
+                  { key: "left", label: "Sisa", value: formatRupiah(totalBudget - totalActual) },
+                ],
+              },
+            ]}
+          />
+        </>
         {canManage ? (
           <div className="flex items-center gap-2">
             <Button onClick={() => void save()} disabled={saving || !dirty}>

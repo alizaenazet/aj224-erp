@@ -171,7 +171,8 @@ export function ProgressMatrix({ projectId, stages, sections, cells, summary, ca
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Seksi</TableHead>
+                {/* The section stays in view while the stage columns scroll sideways. */}
+                <TableHead className="sticky left-0 z-10 bg-card">Seksi</TableHead>
                 <TableHead>Tower</TableHead>
                 <TableHead className="text-right">kms</TableHead>
                 {stages.map((stage) => (
@@ -194,7 +195,7 @@ export function ProgressMatrix({ projectId, stages, sections, cells, summary, ca
             <TableBody>
               {sections.map((section) => (
                 <TableRow key={section.id}>
-                  <TableCell>
+                  <TableCell className="sticky left-0 z-10 bg-card">
                     <div className="flex flex-col">
                       <span className="font-medium">{section.code}</span>
                       <span className="text-xs whitespace-nowrap text-muted-foreground">

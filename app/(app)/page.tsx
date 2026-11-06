@@ -18,7 +18,7 @@ import {
   operationsActions,
   type ActionGroup,
 } from "@/lib/dashboard/queries";
-import { formatNumber, formatRupiah } from "@/lib/format";
+import { formatNumber, formatRupiah, formatRupiahShort } from "@/lib/format";
 
 export default function HomePage() {
   return (
@@ -89,20 +89,21 @@ async function DirectorHome() {
   const { cards, health, charts } = await directorDashboard();
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Nilai kontrak aktif" value={formatRupiah(cards.activeContract)} detail={`${cards.activeCount} proyek aktif`} href="/finance/pl" />
-        <StatCard label="Nilai belum ditagih" value={formatRupiah(cards.unbilled)} detail="Pekerjaan selesai − pendapatan diakui" href="/finance/pl" />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        <StatCard label="Nilai kontrak aktif" value={formatRupiah(cards.activeContract)} shortValue={formatRupiahShort(cards.activeContract)} detail={`${cards.activeCount} proyek aktif`} href="/finance/pl" />
+        <StatCard label="Nilai belum ditagih" value={formatRupiah(cards.unbilled)} shortValue={formatRupiahShort(cards.unbilled)} detail="Pekerjaan selesai − pendapatan diakui" href="/finance/pl" />
         <StatCard
           label="Piutang"
           value={formatRupiah(cards.receivable)}
-          detail={`Lewat jatuh tempo ${formatRupiah(cards.receivableOverdue)}`}
+          shortValue={formatRupiahShort(cards.receivable)}
+          detail={`Lewat jatuh tempo ${formatRupiahShort(cards.receivableOverdue)}`}
           href="/finance/invoices?open=1"
         />
-        <StatCard label="Utang" value={formatRupiah(cards.payable)} detail={`Jatuh tempo ≤ 7 hari ${formatRupiah(cards.payableDue7)}`} href="/finance/bills" />
+        <StatCard label="Utang" value={formatRupiah(cards.payable)} shortValue={formatRupiahShort(cards.payable)} detail={`Jatuh tempo ≤ 7 hari ${formatRupiahShort(cards.payableDue7)}`} href="/finance/bills" />
         <StatCard
           label="Win rate tahun ini"
           value={cards.winRate === null ? "—" : `${formatNumber(cards.winRate, 1)}%`}
-          detail={`Pipeline ${formatRupiah(cards.pipeline)}`}
+          detail={`Pipeline ${formatRupiahShort(cards.pipeline)}`}
           href="/marketing/tender-analytics"
         />
         <StatCard

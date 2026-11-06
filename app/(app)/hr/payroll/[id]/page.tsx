@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { AccessDenied } from "@/components/app/access-denied";
 import { ContentSkeleton } from "@/components/app/content-skeleton";
+import { MobileList } from "@/components/app/mobile-list";
 import { PageHeader } from "@/components/app/page-header";
 import { ExportButton } from "@/components/data-table/export-button";
 import { CorrectionButton, PeriodActions } from "@/components/payroll/period-actions";
@@ -92,56 +93,98 @@ async function PeriodContent({ params }: { params: Params }) {
         </CardHeader>
         <CardContent>
           {slips.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Karyawan</TableHead>
-                  <TableHead className="text-right">Hadir</TableHead>
-                  <TableHead className="text-right">Bruto</TableHead>
-                  <TableHead className="text-right">Potongan</TableHead>
-                  <TableHead className="text-right">Bersih</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {slips.map((slip) => (
-                  <TableRow key={slip.id}>
-                    <TableCell className="whitespace-normal">
-                      <Link href={`/hr/payroll/${period.id}/slips/${slip.id}`} className="font-medium underline-offset-4 hover:underline">
-                        {slip.full_name}
-                      </Link>
-                      <div className="text-xs text-muted-foreground">
-                        {slip.employee_no} · {slip.projects ?? "—"}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {slip.present_days}/{slip.active_days}
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap tabular-nums">{formatRupiah(slip.gross)}</TableCell>
-                    <TableCell className="text-right whitespace-nowrap tabular-nums">{formatRupiah(slip.total_deductions)}</TableCell>
-                    <TableCell className="text-right font-medium whitespace-nowrap tabular-nums">{formatRupiah(slip.net)}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
+            <>
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Karyawan</TableHead>
+                      <TableHead className="text-right">Hadir</TableHead>
+                      <TableHead className="text-right">Bruto</TableHead>
+                      <TableHead className="text-right">Potongan</TableHead>
+                      <TableHead className="text-right">Bersih</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {slips.map((slip) => (
+                      <TableRow key={slip.id}>
+                        <TableCell className="whitespace-normal">
+                          <Link href={`/hr/payroll/${period.id}/slips/${slip.id}`} className="font-medium underline-offset-4 hover:underline">
+                            {slip.full_name}
+                          </Link>
+                          <div className="text-xs text-muted-foreground">
+                            {slip.employee_no} · {slip.projects ?? "—"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {slip.present_days}/{slip.active_days}
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap tabular-nums">{formatRupiah(slip.gross)}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap tabular-nums">{formatRupiah(slip.total_deductions)}</TableCell>
+                        <TableCell className="text-right font-medium whitespace-nowrap tabular-nums">{formatRupiah(slip.net)}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {slip.status === "paid" ? <Badge variant="success">Dibayar</Badge> : null}
+                            {slip.incomplete_attendance ? <Badge variant="warning">Absensi belum lengkap</Badge> : null}
+                            {slip.unverified ? <Badge variant="destructive">Belum diverifikasi</Badge> : null}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                  <TableFooter>
+                    <TableRow>
+                      <TableCell colSpan={2} className="font-medium">
+                        Total
+                      </TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">{formatRupiah(period.gross_total)}</TableCell>
+                      <TableCell />
+                      <TableCell className="text-right font-medium tabular-nums">{formatRupiah(period.net_total)}</TableCell>
+                      <TableCell />
+                    </TableRow>
+                  </TableFooter>
+                </Table>
+              </div>
+              <MobileList
+                rows={[
+                  ...slips.map((slip) => ({
+                    key: slip.id,
+                    title: (
+                      <>
+                        <Link href={`/hr/payroll/${period.id}/slips/${slip.id}`} className="underline-offset-4 hover:underline">
+                          {slip.full_name}
+                        </Link>
+                        <span className="text-xs font-normal text-muted-foreground">
+                          {slip.employee_no} · {slip.projects ?? "—"}
+                        </span>
+                      </>
+                    ),
+                    aside: (
+                      <>
                         {slip.status === "paid" ? <Badge variant="success">Dibayar</Badge> : null}
                         {slip.incomplete_attendance ? <Badge variant="warning">Absensi belum lengkap</Badge> : null}
                         {slip.unverified ? <Badge variant="destructive">Belum diverifikasi</Badge> : null}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableCell colSpan={2} className="font-medium">
-                    Total
-                  </TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">{formatRupiah(period.gross_total)}</TableCell>
-                  <TableCell />
-                  <TableCell className="text-right font-medium tabular-nums">{formatRupiah(period.net_total)}</TableCell>
-                  <TableCell />
-                </TableRow>
-              </TableFooter>
-            </Table>
+                      </>
+                    ),
+                    fields: [
+                      { key: "days", label: "Hadir", value: `${slip.present_days}/${slip.active_days}` },
+                      { key: "gross", label: "Bruto", value: formatRupiah(slip.gross) },
+                      { key: "deductions", label: "Potongan", value: formatRupiah(slip.total_deductions) },
+                      { key: "net", label: "Bersih", value: <span className="font-medium">{formatRupiah(slip.net)}</span> },
+                    ],
+                  })),
+                  {
+                    key: "total",
+                    title: "Total",
+                    fields: [
+                      { key: "gross", label: "Bruto", value: formatRupiah(period.gross_total) },
+                      { key: "net", label: "Bersih", value: <span className="font-medium">{formatRupiah(period.net_total)}</span> },
+                    ],
+                  },
+                ]}
+              />
+            </>
           ) : (
             <p className="text-sm text-muted-foreground">{profile.role === "hcm" ? "Klik Hitung ulang untuk menyusun draf." : "Belum ada slip."}</p>
           )}
@@ -168,26 +211,41 @@ async function PeriodContent({ params }: { params: Params }) {
             </CardAction>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Proyek</TableHead>
-                  <TableHead className="text-right">Karyawan</TableHead>
-                  <TableHead className="text-right">Hari hadir</TableHead>
-                  <TableHead className="text-right">Biaya gaji</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recap.map((row) => (
-                  <TableRow key={row.project_code}>
-                    <TableCell>{row.project_code}</TableCell>
-                    <TableCell className="text-right tabular-nums">{row.employees}</TableCell>
-                    <TableCell className="text-right tabular-nums">{row.days}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatRupiah(row.allocated)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <>
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Proyek</TableHead>
+                      <TableHead className="text-right">Karyawan</TableHead>
+                      <TableHead className="text-right">Hari hadir</TableHead>
+                      <TableHead className="text-right">Biaya gaji</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recap.map((row) => (
+                      <TableRow key={row.project_code}>
+                        <TableCell>{row.project_code}</TableCell>
+                        <TableCell className="text-right tabular-nums">{row.employees}</TableCell>
+                        <TableCell className="text-right tabular-nums">{row.days}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatRupiah(row.allocated)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <MobileList
+                rows={recap.map((row) => ({
+                  key: row.project_code,
+                  title: row.project_code,
+                  fields: [
+                    { key: "employees", label: "Karyawan", value: row.employees },
+                    { key: "days", label: "Hari hadir", value: row.days },
+                    { key: "allocated", label: "Biaya gaji", value: formatRupiah(row.allocated), full: true },
+                  ],
+                }))}
+              />
+            </>
           </CardContent>
         </Card>
       ) : null}

@@ -102,7 +102,7 @@ export const TXN_COLUMNS: ColumnDef<TxnRow, unknown>[] = [
     ),
   },
   {
-    id: "summary",
+    id: "summary", meta: { mobile: "full" },
     header: "Material",
     cell: ({ row }) => (
       <div className="flex max-w-96 flex-col gap-1 whitespace-normal">

@@ -71,7 +71,7 @@ const COLUMNS: ColumnDef<ClientRow, unknown>[] = [
   { id: "tenders", header: "Tender", cell: ({ row }) => row.original.stats.tender_count },
   { id: "win_rate", header: "Win Rate", cell: ({ row }) => formatRate(row.original.stats.win_rate_count) },
   {
-    id: "status",
+    id: "status", meta: { mobile: "aside" },
     header: "Status",
     cell: ({ row }) => (
       <Badge variant={row.original.is_active ? "secondary" : "destructive"}>

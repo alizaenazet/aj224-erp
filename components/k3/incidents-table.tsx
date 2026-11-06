@@ -77,11 +77,11 @@ const COLUMNS: ColumnDef<IncidentRow, unknown>[] = [
   },
   { id: "classification", header: "Klasifikasi", cell: ({ row }) => <ClassificationBadge classification={row.original.classification} /> },
   {
-    id: "chronology",
+    id: "chronology", meta: { mobile: "full" },
     header: "Kronologi",
     cell: ({ row }) => <span className="line-clamp-2 max-w-96 whitespace-normal">{row.original.chronology}</span>,
   },
-  { id: "status", header: "Status", cell: ({ row }) => <IncidentStatusBadge status={row.original.status} /> },
+  { id: "status", meta: { mobile: "aside" }, header: "Status", cell: ({ row }) => <IncidentStatusBadge status={row.original.status} /> },
   {
     id: "actions",
     header: "Tindakan",

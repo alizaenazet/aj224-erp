@@ -67,7 +67,7 @@ const COLUMNS: ColumnDef<NoteRow, unknown>[] = [
       </div>
     ),
   },
-  { id: "status", header: "Status", cell: ({ row }) => <NoteStatusBadge status={row.original.status} /> },
+  { id: "status", meta: { mobile: "aside" }, header: "Status", cell: ({ row }) => <NoteStatusBadge status={row.original.status} /> },
   { id: "lines", header: "Baris", cell: ({ row }) => row.original.line_count },
 ];
 

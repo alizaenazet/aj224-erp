@@ -9,6 +9,7 @@ import {
   type LostReason,
   type TenderStatus,
 } from "@/lib/tenders/labels";
+import { MoneyValue } from "@/components/app/money-value";
 
 type WinRow = {
   key: string;
@@ -23,7 +24,7 @@ type WinRow = {
 
 /** Headline cards for the period (MKT-08, §11.1). */
 export function AnalyticsSummary({ overall }: { overall: WinRow | null }) {
-  const cards: [string, string, string][] = [
+  const cards: [string, React.ReactNode, string][] = [
     [
       "Win rate (jumlah)",
       formatRate(overall?.win_rate_count),
@@ -34,17 +35,17 @@ export function AnalyticsSummary({ overall }: { overall: WinRow | null }) {
       formatRate(overall?.win_rate_value),
       `${formatRupiah(overall?.won_value ?? 0)} dari ${formatRupiah((overall?.won_value ?? 0) + (overall?.lost_value ?? 0))}`,
     ],
-    ["Nilai menang", formatRupiah(overall?.won_value ?? 0), `${overall?.won_count ?? 0} tender`],
-    ["Nilai kalah", formatRupiah(overall?.lost_value ?? 0), `${overall?.lost_count ?? 0} tender`],
+    ["Nilai menang", <MoneyValue key="won" value={overall?.won_value ?? 0} />, `${overall?.won_count ?? 0} tender`],
+    ["Nilai kalah", <MoneyValue key="lost" value={overall?.lost_value ?? 0} />, `${overall?.lost_count ?? 0} tender`],
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
       {cards.map(([title, value, note]) => (
         <Card key={title}>
           <CardHeader>
             <CardDescription>{title}</CardDescription>
-            <CardTitle className="text-2xl">{value}</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl">{value}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">{note}</CardContent>
         </Card>

@@ -71,7 +71,7 @@ const COLUMNS: ColumnDef<ExpenseRow, unknown>[] = [
   { id: "project", header: "Proyek", cell: ({ row }) => <span className="whitespace-nowrap">{row.original.project_code ?? "Kantor/Umum"}</span> },
   { id: "category", header: "Kategori", cell: ({ row }) => <span className="whitespace-normal">{row.original.category_name}</span> },
   {
-    id: "description",
+    id: "description", meta: { mobile: "title" },
     header: "Keterangan",
     cell: ({ row }) => (
       <div className="flex max-w-80 flex-col gap-1 whitespace-normal">
@@ -84,7 +84,7 @@ const COLUMNS: ColumnDef<ExpenseRow, unknown>[] = [
   },
   { id: "amount", header: "Jumlah", cell: ({ row }) => <span className="whitespace-nowrap tabular-nums">{formatRupiah(row.original.amount)}</span> },
   {
-    id: "flags",
+    id: "flags", meta: { mobile: "aside" },
     header: "Status",
     cell: ({ row }) => (
       <div className="flex flex-wrap gap-1">

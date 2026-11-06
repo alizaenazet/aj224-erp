@@ -84,7 +84,7 @@ const COLUMNS: ColumnDef<BillRow, unknown>[] = [
   },
   { id: "total", header: "Total", cell: ({ row }) => <span className="whitespace-nowrap tabular-nums">{formatRupiah(row.original.total)}</span> },
   { id: "balance", header: "Sisa", cell: ({ row }) => <span className="whitespace-nowrap tabular-nums">{formatRupiah(row.original.balance)}</span> },
-  { id: "status", header: "Status", cell: ({ row }) => <BillStatusBadge status={row.original.status} /> },
+  { id: "status", meta: { mobile: "aside" }, header: "Status", cell: ({ row }) => <BillStatusBadge status={row.original.status} /> },
 ];
 
 /** Tagihan Supplier & Utang (FIN-06 … FIN-08). */

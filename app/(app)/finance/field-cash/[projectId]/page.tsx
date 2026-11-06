@@ -13,8 +13,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { requireRole } from "@/lib/auth/session";
 import { FIELD_CASH_VIEW_ROLES } from "@/lib/bills/labels";
 import { costFormOptions, fieldCashBalance, fieldCashLedger } from "@/lib/bills/queries";
-import { formatRupiah, todayWib } from "@/lib/format";
+import { todayWib } from "@/lib/format";
 import { getProject } from "@/lib/projects/queries";
+import { MoneyValue } from "@/components/app/money-value";
 
 export const metadata: Metadata = { title: "Kas Lapangan Proyek" };
 
@@ -65,12 +66,14 @@ async function ProjectFieldCash({ params }: { params: Params }) {
           </>
         }
       />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {tiles.map(([label, value]) => (
           <Card key={label}>
             <CardHeader>
               <CardDescription>{label}</CardDescription>
-              <CardTitle className="text-xl tabular-nums">{formatRupiah(value)}</CardTitle>
+              <CardTitle className="text-lg tabular-nums sm:text-xl">
+                <MoneyValue value={value} />
+              </CardTitle>
             </CardHeader>
           </Card>
         ))}

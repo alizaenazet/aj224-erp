@@ -37,7 +37,7 @@ export function CertificatesToolbar({ types }: { types: { value: string; label: 
 const COLUMNS: ColumnDef<CertificateRow, unknown>[] = [
   { id: "employee_no", header: "NIK Karyawan", cell: ({ row }) => row.original.employee_no },
   {
-    id: "employee_name",
+    id: "employee_name", meta: { mobile: "title" },
     header: "Nama",
     cell: ({ row }) => (
       <Link
@@ -57,7 +57,7 @@ const COLUMNS: ColumnDef<CertificateRow, unknown>[] = [
       row.original.expiry_date ? formatDate(row.original.expiry_date) : "Seumur hidup",
   },
   { id: "days_left", header: "Sisa", cell: ({ row }) => describeDaysLeft(row.original.days_left) },
-  { id: "status", header: "Status", cell: ({ row }) => <CertificateStatusBadge status={row.original.status} /> },
+  { id: "status", meta: { mobile: "aside" }, header: "Status", cell: ({ row }) => <CertificateStatusBadge status={row.original.status} /> },
 ];
 
 /** Current certificates (HCM-04), soonest expiry first by default. */

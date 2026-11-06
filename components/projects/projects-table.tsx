@@ -64,7 +64,7 @@ export function ProjectsTable({
     const base: ColumnDef<ProjectRow, unknown>[] = [
       { id: "code", header: "Kode", cell: ({ row }) => <span className="whitespace-nowrap">{row.original.code}</span> },
       {
-        id: "name",
+        id: "name", meta: { mobile: "title" },
         header: "Proyek",
         cell: ({ row }) => (
           <div className="flex max-w-96 flex-col gap-1 whitespace-normal">
@@ -77,7 +77,7 @@ export function ProjectsTable({
           </div>
         ),
       },
-      { id: "status", header: "Status", cell: ({ row }) => <ProjectStatusBadge status={row.original.status} /> },
+      { id: "status", meta: { mobile: "aside" }, header: "Status", cell: ({ row }) => <ProjectStatusBadge status={row.original.status} /> },
       {
         id: "start_date",
         header: "Jadwal",

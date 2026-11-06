@@ -99,7 +99,7 @@ const COLUMNS: ColumnDef<InvoiceRow, unknown>[] = [
       </span>
     ),
   },
-  { id: "status", header: "Status", cell: ({ row }) => <InvoiceStatusBadge status={row.original.status} /> },
+  { id: "status", meta: { mobile: "aside" }, header: "Status", cell: ({ row }) => <InvoiceStatusBadge status={row.original.status} /> },
 ];
 
 /** Invoice & Piutang (FIN-01 … FIN-04). */

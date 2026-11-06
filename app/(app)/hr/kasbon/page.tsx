@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AccessDenied } from "@/components/app/access-denied";
 import { ContentSkeleton } from "@/components/app/content-skeleton";
+import { MobileList } from "@/components/app/mobile-list";
 import { ListPagination } from "@/components/app/list-pagination";
 import { PageHeader } from "@/components/app/page-header";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
@@ -57,44 +58,71 @@ async function KasbonContent({ searchParams }: { searchParams: SearchParams }) {
       <Card>
         <CardContent>
           {rows.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Karyawan</TableHead>
-                  <TableHead>Tanggal</TableHead>
-                  <TableHead className="text-right">Jumlah</TableHead>
-                  <TableHead className="text-right">Cicilan</TableHead>
-                  <TableHead className="text-right">Dipotong</TableHead>
-                  <TableHead className="text-right">Saldo</TableHead>
-                  <TableHead>Sumber</TableHead>
-                  {manage ? <TableHead className="text-right">Aksi</TableHead> : null}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell className="whitespace-normal">
+            <>
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Karyawan</TableHead>
+                      <TableHead>Tanggal</TableHead>
+                      <TableHead className="text-right">Jumlah</TableHead>
+                      <TableHead className="text-right">Cicilan</TableHead>
+                      <TableHead className="text-right">Dipotong</TableHead>
+                      <TableHead className="text-right">Saldo</TableHead>
+                      <TableHead>Sumber</TableHead>
+                      {manage ? <TableHead className="text-right">Aksi</TableHead> : null}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell className="whitespace-normal">
+                          {row.full_name}
+                          <div className="text-xs text-muted-foreground">
+                            {row.employee_no}
+                            {row.description ? ` · ${row.description}` : ""}
+                          </div>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">{formatDate(row.kasbon_date)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatRupiah(row.amount)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatRupiah(row.installment_amount)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatRupiah(row.deducted)}</TableCell>
+                        <TableCell className="text-right font-medium tabular-nums">{formatRupiah(row.balance)}</TableCell>
+                        <TableCell>
+                          {row.status === "cancelled" ? <Badge variant="destructive">Batal</Badge> : <Badge variant="outline">{SOURCE_LABELS[row.source]}</Badge>}
+                        </TableCell>
+                        {manage ? (
+                          <TableCell className="text-right">{row.status === "active" && row.deducted === 0 ? <CancelKasbonButton id={row.id} /> : null}</TableCell>
+                        ) : null}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <MobileList
+                rows={rows.map((row) => ({
+                  key: row.id,
+                  title: (
+                    <>
                       {row.full_name}
-                      <div className="text-xs text-muted-foreground">
+                      <span className="text-xs font-normal text-muted-foreground">
                         {row.employee_no}
                         {row.description ? ` · ${row.description}` : ""}
-                      </div>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">{formatDate(row.kasbon_date)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatRupiah(row.amount)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatRupiah(row.installment_amount)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatRupiah(row.deducted)}</TableCell>
-                    <TableCell className="text-right font-medium tabular-nums">{formatRupiah(row.balance)}</TableCell>
-                    <TableCell>
-                      {row.status === "cancelled" ? <Badge variant="destructive">Batal</Badge> : <Badge variant="outline">{SOURCE_LABELS[row.source]}</Badge>}
-                    </TableCell>
-                    {manage ? (
-                      <TableCell className="text-right">{row.status === "active" && row.deducted === 0 ? <CancelKasbonButton id={row.id} /> : null}</TableCell>
-                    ) : null}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                      </span>
+                    </>
+                  ),
+                  aside: row.status === "cancelled" ? <Badge variant="destructive">Batal</Badge> : <Badge variant="outline">{SOURCE_LABELS[row.source]}</Badge>,
+                  fields: [
+                    { key: "date", label: "Tanggal", value: formatDate(row.kasbon_date) },
+                    { key: "amount", label: "Jumlah", value: formatRupiah(row.amount) },
+                    { key: "installment", label: "Cicilan", value: formatRupiah(row.installment_amount) },
+                    { key: "deducted", label: "Dipotong", value: formatRupiah(row.deducted) },
+                    { key: "balance", label: "Saldo", value: <span className="font-medium">{formatRupiah(row.balance)}</span> },
+                  ],
+                  actions: manage && row.status === "active" && row.deducted === 0 ? <CancelKasbonButton id={row.id} /> : undefined,
+                }))}
+              />
+            </>
           ) : (
             <p className="text-sm text-muted-foreground">Belum ada kasbon.</p>
           )}

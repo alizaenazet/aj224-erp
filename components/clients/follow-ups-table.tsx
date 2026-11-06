@@ -88,7 +88,7 @@ export function FollowUpsTable({ rows, today, canLog, currentUserId, isSuperAdmi
         ),
       },
       {
-        id: "activity",
+        id: "activity", meta: { mobile: "full" },
         header: "Aktivitas",
         cell: ({ row }) => (
           <div className="flex max-w-96 flex-col gap-1 whitespace-normal">

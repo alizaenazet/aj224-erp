@@ -167,7 +167,7 @@ export function AssignmentsTable({
         ),
       },
       {
-        id: "state",
+        id: "state", meta: { mobile: "aside" },
         header: "Status",
         cell: ({ row }) => (
           <div className="flex flex-wrap gap-1">
