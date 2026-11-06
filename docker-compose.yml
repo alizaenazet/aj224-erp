@@ -1,0 +1,223 @@
+# AJ224 ERP: the whole app with its own local Supabase, in one command.
+#
+#   docker compose up -d --build
+#
+# Then open http://localhost:3000 (demo accounts: see README.md).
+# Emails sent by the app (invites, password reset) land in http://localhost:54324.
+#
+# This stack is for trying the app on one computer. The keys below are the
+# public demo values of the Supabase CLI; never use them on a server.
+# Ports can be changed with APP_PORT, API_PORT and MAIL_PORT (e.g. in a .env file).
+
+name: aj224-erp
+
+# Public demo values of the Supabase CLI (local only).
+x-jwt-secret: &jwt-secret super-secret-jwt-token-with-at-least-32-characters-long
+x-anon-key: &anon-key eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+x-service-key: &service-key eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+
+services:
+  # PostgreSQL with Supabase extensions (pg_cron runs the daily checks).
+  db:
+    image: public.ecr.aws/supabase/postgres:17.11.0.006
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      POSTGRES_USER: supabase_admin
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_INITDB_ARGS: --allow-group-access --locale-provider=icu --encoding=UTF-8 --icu-locale=en_US.UTF-8
+      JWT_SECRET: *jwt-secret
+      JWT_EXP: 3600
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Run once when the volume is created: role passwords and JWT settings.
+      - ./docker/db/schema.sql:/etc/postgresql.schema.sql:ro
+    command: ["postgres", "-D", "/etc/postgresql"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -h 127.0.0.1 -p 5432"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Supabase Auth (login, invites, password reset).
+  auth:
+    image: public.ecr.aws/supabase/gotrue:v2.197.0
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: http://127.0.0.1:${API_PORT:-54321}/auth/v1
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgresql://supabase_auth_admin:postgres@db:5432/postgres
+      GOTRUE_SITE_URL: http://localhost:${APP_PORT:-3000}
+      GOTRUE_URI_ALLOW_LIST: http://localhost:${APP_PORT:-3000}/**,http://127.0.0.1:${APP_PORT:-3000}/**
+      GOTRUE_DISABLE_SIGNUP: "true"
+      GOTRUE_JWT_SECRET: *jwt-secret
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_ISSUER: http://127.0.0.1:${API_PORT:-54321}/auth/v1
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_EXTERNAL_PHONE_ENABLED: "false"
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: "false"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED: "true"
+      GOTRUE_MAILER_OTP_EXP: 3600
+      GOTRUE_PASSWORD_MIN_LENGTH: 8
+      GOTRUE_SECURITY_REFRESH_TOKEN_ROTATION_ENABLED: "true"
+      GOTRUE_SECURITY_REFRESH_TOKEN_REUSE_INTERVAL: 10
+      GOTRUE_RATE_LIMIT_EMAIL_SENT: 360000
+      GOTRUE_RATE_LIMIT_TOKEN_REFRESH: 150
+      GOTRUE_RATE_LIMIT_VERIFY: 30
+      GOTRUE_RATE_LIMIT_OTP: 30
+      # All mail goes to the local mail catcher (no real email is sent).
+      GOTRUE_SMTP_HOST: mail
+      GOTRUE_SMTP_PORT: 1025
+      GOTRUE_SMTP_ADMIN_EMAIL: noreply@aj224.test
+      GOTRUE_SMTP_SENDER_NAME: AJ224 ERP
+      GOTRUE_SMTP_MAX_FREQUENCY: 1s
+      GOTRUE_MAILER_URLPATHS_INVITE: http://127.0.0.1:${API_PORT:-54321}/auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: http://127.0.0.1:${API_PORT:-54321}/auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_RECOVERY: http://127.0.0.1:${API_PORT:-54321}/auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: http://127.0.0.1:${API_PORT:-54321}/auth/v1/verify
+      GOTRUE_MAILER_SUBJECTS_INVITE: Undangan akun AJ224 ERP
+      GOTRUE_MAILER_SUBJECTS_RECOVERY: Atur ulang kata sandi AJ224 ERP
+      GOTRUE_MAILER_TEMPLATES_INVITE: http://gateway:8088/email/invite.html
+      GOTRUE_MAILER_TEMPLATES_RECOVERY: http://gateway:8088/email/recovery.html
+      # Puts the user's role in the access token (see access_control migration).
+      GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_ENABLED: "true"
+      GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_URI: pg-functions://postgres/public/custom_access_token_hook
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9999/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # REST API over the database (PostgREST).
+  rest:
+    image: public.ecr.aws/supabase/postgrest:v16.5
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgresql://authenticator:postgres@db:5432/postgres
+      PGRST_DB_SCHEMAS: public,graphql_public
+      PGRST_DB_EXTRA_SEARCH_PATH: public,extensions
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_DB_MAX_ROWS: 1000
+      PGRST_JWT_SECRET: *jwt-secret
+    command: ["/bin/postgrest"]
+
+  # File storage (attachments, photos, company logo), kept in a Docker volume.
+  storage:
+    image: public.ecr.aws/supabase/storage-api:v1.84.19
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ANON_KEY: *anon-key
+      SERVICE_KEY: *service-key
+      AUTH_JWT_SECRET: *jwt-secret
+      DATABASE_URL: postgresql://supabase_storage_admin:postgres@db:5432/postgres
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /mnt
+      FILE_SIZE_LIMIT: 52428800
+      TENANT_ID: stub
+      STORAGE_S3_REGION: local
+      GLOBAL_S3_BUCKET: stub
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+      S3_PROTOCOL_ENABLED: "false"
+      VECTOR_ENABLED: "false"
+    volumes:
+      - storage-data:/mnt
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:5000/status"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Catches every email the app sends; read them at http://localhost:54324.
+  mail:
+    image: public.ecr.aws/supabase/mailpit:v1.31.3
+    restart: unless-stopped
+    environment:
+      MP_SMTP_DISABLE_RDNS: "true"
+    ports:
+      - 127.0.0.1:${MAIL_PORT:-54324}:8025
+
+  # One gateway for the Supabase APIs (/auth/v1, /rest/v1, /storage/v1), like
+  # the hosted service. The app shares its network so that the same address,
+  # http://127.0.0.1:API_PORT, works from the browser and from the app server.
+  gateway:
+    image: nginx:1.29-alpine
+    restart: unless-stopped
+    environment:
+      API_PORT: ${API_PORT:-54321}
+    volumes:
+      - ./docker/gateway/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./docker/gateway/cors.conf:/etc/nginx/snippets/cors.conf:ro
+      - ./supabase/templates:/usr/share/nginx/email:ro
+    ports:
+      - 127.0.0.1:${API_PORT:-54321}:${API_PORT:-54321}
+      - 127.0.0.1:${APP_PORT:-3000}:3000
+
+  # Applies supabase/migrations and, on an empty database, supabase/seed.sql.
+  # Runs on every start and only applies what is new.
+  migrate:
+    image: public.ecr.aws/supabase/postgres:17.11.0.006
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    volumes:
+      - ./supabase:/supabase:ro
+      - ./docker/migrate.sh:/migrate.sh:ro
+    entrypoint: ["sh", "/migrate.sh"]
+
+  # The AJ224 ERP web app (Next.js).
+  app:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:${API_PORT:-54321}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: *anon-key
+    restart: unless-stopped
+    network_mode: service:gateway
+    depends_on:
+      gateway:
+        condition: service_started
+      rest:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:${API_PORT:-54321}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: *anon-key
+      SUPABASE_SECRET_KEY: *service-key
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/auth/login"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  db-data:
+  storage-data:

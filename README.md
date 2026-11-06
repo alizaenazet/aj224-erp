@@ -1,110 +1,137 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# AJ224 ERP
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+Aplikasi web untuk mengelola usaha **UD. AJ224**, kontraktor stringing (penarikan konduktor) tower SUTT/SUTET. Aplikasi ini menggantikan kertas, WhatsApp, dan file Excel yang terpisah-pisah.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+**Proyek adalah pusat data.** Setiap biaya, tagihan, absensi, laporan harian, alat, material, dan insiden K3 selalu terikat ke satu proyek (atau ke "Kantor/Umum"). Karena itu laba-rugi per proyek, piutang, utang, dan status keselamatan langsung terlihat tanpa rekap manual.
 
-## Features
+Aplikasi berjalan di browser, baik di komputer maupun HP. Semua tampilan berbahasa Indonesia, nilai uang dalam Rupiah, dan waktu dalam WIB.
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Proxy
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+---
 
-## Demo
+## Fitur
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+| Modul | Isi |
+|---|---|
+| **Beranda** | Dashboard sesuai peran, daftar "Perlu Tindakan", dan notifikasi |
+| **Marketing** | Data klien, tender dari prospek sampai menang/kalah, analitik tender |
+| **Proyek** | Kontrak, termin, RAB, seksi tarik & progres. Halaman proyek merangkum biaya, tim, alat, material, K3, dan dokumen |
+| **Laporan Harian** | Progres harian, foto lapangan, kendala, dan cuaca, langsung dari HP |
+| **Alat & Mobilisasi** | Daftar alat, lokasi dan kondisinya, serta Surat Jalan kirim/terima |
+| **Material & Stok** | Stok per lokasi, penerimaan, pemakaian, stok opname, material titipan klien, dan peringatan stok minimum |
+| **K3 (Insiden)** | Lapor insiden, investigasi, tindakan perbaikan, LTIFR, dan hari tanpa kecelakaan |
+| **Keuangan** | Invoice & piutang (umur piutang), tagihan supplier & utang, pengeluaran, kas lapangan, dan Laporan Laba/Rugi per proyek |
+| **SDM** | Karyawan, sertifikasi (peringatan kedaluwarsa), pelatihan, penugasan, absensi, dan kasbon |
+| **Payroll** | Hitung gaji, persetujuan Direktur, pembayaran, slip gaji, dan biaya gaji otomatis masuk ke proyek |
+| **Fitur umum** | Lampiran foto/dokumen, ekspor Excel, cetak PDF, impor data awal dari Excel, dan log audit |
 
-## Deploy to Vercel
+## Peran pengguna
 
-Vercel deployment will guide you through creating a Supabase account and project.
+Akun dibuat oleh Super Admin lewat undangan email; tidak ada pendaftaran mandiri. Satu akun memiliki satu peran.
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+| Peran | Untuk siapa | Yang dikerjakan |
+|---|---|---|
+| **Super Admin** | Admin IT / pemilik | Mengelola pengguna, peran, master data, profil perusahaan, dan parameter sistem |
+| **Direktur** | Direktur / pemilik | Melihat seluruh data dan dashboard, serta menyetujui payroll |
+| **Marketing** | Staf marketing | Klien, tender, dan analitik tender |
+| **Finance** | Staf keuangan | Invoice, piutang, tagihan supplier, utang, pengeluaran, verifikasi kas lapangan, dan pembayaran gaji |
+| **HCM** | Staf SDM | Karyawan, sertifikasi, pelatihan, penugasan, absensi, kasbon, dan penyusunan payroll |
+| **Operasional** | Manajer operasional / proyek di kantor | Progres, RAB, laporan harian, alat, material, dan K3 untuk semua proyek |
+| **Lapangan** | Site manager / pengawas di lokasi | Absensi kru, laporan harian, kas lapangan, terima alat/material, pakai material, dan lapor insiden. **Hanya untuk proyek tempat ia ditugaskan** |
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+Data gaji hanya bisa dilihat oleh Finance, HCM, dan Direktur. Super Admin pun tidak bisa melihatnya.
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+---
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+## Cara menjalankan di komputer sendiri
 
-## Clone and run locally
+Cukup satu perintah. Semua yang dibutuhkan, yaitu aplikasi, database, login, penyimpanan file, dan kotak email uji, ikut berjalan di Docker. Database langsung terisi data contoh.
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+### 1. Siapkan
 
-2. Create a Next.js app using the Supabase Starter template npx command
+- Pasang **Docker Desktop** dari <https://www.docker.com/products/docker-desktop/>, lalu buka dan tunggu sampai statusnya *running*.
+- Sediakan sekitar **4 GB** ruang disk kosong dan koneksi internet untuk unduhan pertama.
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+### 2. Unduh proyek
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+Unduh folder proyek ini, misalnya dari GitHub: **Code → Download ZIP**, lalu ekstrak. Bisa juga dengan `git clone`.
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+### 3. Buka terminal di folder proyek
 
-3. Use `cd` to change into the app's directory
+- **Mac:** klik kanan folder proyek → *New Terminal at Folder*.
+- **Windows:** buka folder proyek, ketik `powershell` di kolom alamat File Explorer, lalu tekan Enter.
 
-   ```bash
-   cd with-supabase-app
-   ```
+### 4. Jalankan
 
-4. Rename `.env.example` to `.env.local` and update the following:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
+```bash
+docker compose up -d --build
 ```
 
-> [!NOTE]
-> This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-> Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-> See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
+Pertama kali, proses ini butuh **5–15 menit** (mengunduh dan menyiapkan semuanya). Berikutnya hanya beberapa detik.
 
-Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+### 5. Buka aplikasi
 
-5. You can now run the Next.js local development server:
+Buka **<http://localhost:3000>** di browser. Jika halaman belum muncul, tunggu satu menit lalu muat ulang.
 
-   ```bash
-   npm run dev
-   ```
+### Akun demo
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+Semua akun demo memakai kata sandi **`XoeaMqu92fwT`**.
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+| Peran | Email |
+|---|---|
+| Super Admin | `superadmin@aj224.test` |
+| Direktur | `direktur@aj224.test` |
+| Marketing | `marketing@aj224.test` |
+| Finance | `finance@aj224.test` |
+| HCM | `hcm@aj224.test` |
+| Operasional | `operasional@aj224.test` |
+| Lapangan | `lapangan@aj224.test` (paling nyaman dibuka di HP / jendela sempit) |
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+### Alamat penting
 
-## Feedback and issues
+| Alamat | Isinya |
+|---|---|
+| <http://localhost:3000> | Aplikasi AJ224 ERP |
+| <http://localhost:54324> | Kotak email uji. Semua email dari aplikasi (undangan pengguna, atur ulang kata sandi) masuk ke sini, tidak ada yang terkirim ke internet |
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+---
 
-## More Supabase examples
+## Perintah sehari-hari
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+Jalankan di terminal, di dalam folder proyek.
+
+| Tujuan | Perintah |
+|---|---|
+| Menghentikan aplikasi (data tetap tersimpan) | `docker compose stop` |
+| Menyalakan lagi | `docker compose up -d` |
+| Memperbarui setelah kode proyek berubah | `docker compose up -d --build` |
+| Melihat status (semua harus *running* / *healthy*) | `docker compose ps` |
+| Melihat log aplikasi bila ada masalah | `docker compose logs app` |
+| **Menghapus semua data** dan mulai dari data contoh lagi | `docker compose down -v`, lalu `docker compose up -d` |
+
+## Jika ada masalah
+
+- **"Cannot connect to the Docker daemon"**: Docker Desktop belum menyala. Buka dulu, tunggu sampai *running*, lalu ulangi perintahnya.
+- **"port is already allocated"**: port 3000, 54321, atau 54324 sedang dipakai aplikasi lain. Buat file bernama `.env` di folder proyek, isi dengan port lain, misalnya:
+
+  ```
+  APP_PORT=3001
+  API_PORT=54331
+  MAIL_PORT=54334
+  ```
+
+  Jalankan lagi `docker compose up -d --build`, lalu buka <http://localhost:3001>.
+- **Halaman tidak terbuka**: jalankan `docker compose ps`. Tunggu sampai `app` berstatus *healthy*.
+- **Ingin mulai dari awal**: `docker compose down -v`, lalu `docker compose up -d`.
+
+## Catatan keamanan
+
+Paket Docker ini hanya untuk **mencoba aplikasi di satu komputer**. Kunci dan kata sandinya adalah nilai demo yang sudah umum diketahui, dan aplikasi hanya bisa dibuka dari komputer itu sendiri (`localhost`). Jangan memakai paket ini untuk server atau data asli perusahaan.
+
+---
+
+## Untuk developer
+
+- Teknologi: Next.js 16 (App Router), Supabase (Postgres, Auth, Storage, RLS), shadcn/ui, dan Tailwind CSS 4.
+- Pengembangan harian memakai Supabase CLI: `pnpm db:start`, `pnpm db:reset`, dan `pnpm dev`. Kunci lokalnya ada di `.env.local` (lihat `.env.example`).
+- Struktur database dan aturan akses ada di `supabase/migrations`, data contoh di `supabase/seed.sql`. Kebutuhan produk ada di `PRD.md`, spesifikasi per modul di `openspec/specs`.
+- Paket Docker: `docker-compose.yml`, `Dockerfile`, dan folder `docker/` (gateway API, pengaturan awal database, dan skrip migrasi + seed yang hanya menerapkan migrasi baru setiap kali dinyalakan).

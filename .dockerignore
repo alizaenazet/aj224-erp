@@ -1,0 +1,16 @@
+.git
+.claude
+.next
+node_modules
+.env
+.env*.local
+.vercel
+*.tsbuildinfo
+docker-compose.yml
+Dockerfile
+docker
+docs
+openspec
+PRD.md
+README.md
+supabase
