@@ -1,4 +1,13 @@
-import { CalendarCheckIcon, ClipboardListIcon, TruckIcon, UserPlusIcon } from "lucide-react";
+import {
+  CalendarCheckIcon,
+  ClipboardListIcon,
+  PackageMinusIcon,
+  PackagePlusIcon,
+  TriangleAlertIcon,
+  TruckIcon,
+  UserPlusIcon,
+  WalletIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { NoAssignment } from "@/components/field/no-assignment";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +16,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from "@/components/ui/progress";
 import { fieldProjects } from "@/lib/field/queries";
 import { REPORT_STATUS_LABELS, REPORT_STATUS_VARIANTS, type ReportStatus } from "@/lib/daily-reports/labels";
+import { formatRupiah } from "@/lib/format";
 import { formatProgress } from "@/lib/progress/labels";
 
 /** Beranda Lapangan (DSB-04): active projects, quick actions and today's attendance status. */
@@ -53,6 +63,14 @@ export async function FieldHome() {
                   <Badge variant="outline">Belum dikirim</Badge>
                 )}
               </div>
+              {project.cash_balance !== null ? (
+                <div className="flex items-baseline justify-between gap-2 text-sm">
+                  <Link href={`/finance/field-cash/${project.id}`} className="underline-offset-4 hover:underline">
+                    Kas lapangan
+                  </Link>
+                  <span className="font-medium tabular-nums">{formatRupiah(project.cash_balance)}</span>
+                </div>
+              ) : null}
               {project.incoming_notes.length ? (
                 <div className="flex items-baseline justify-between gap-2 text-sm">
                   <span>Surat jalan masuk</span>
@@ -89,16 +107,39 @@ export async function FieldHome() {
                     }
                   >
                     <TruckIcon />
-                    Terima Alat
+                    Terima Kiriman
                   </Link>
                 </Button>
               ) : null}
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className={project.incoming_notes.length ? undefined : "sm:col-span-2"}
-              >
+              {project.location_id ? (
+                <>
+                  <Button asChild size="lg" variant="outline">
+                    <Link href={`/operations/material-transactions/new?kind=receipt&location=${project.location_id}`}>
+                      <PackagePlusIcon />
+                      Terima Material
+                    </Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline">
+                    <Link href={`/operations/material-transactions/new?kind=usage&location=${project.location_id}`}>
+                      <PackageMinusIcon />
+                      Pakai Material
+                    </Link>
+                  </Button>
+                </>
+              ) : null}
+              <Button asChild size="lg" variant="outline">
+                <Link href={`/finance/field-cash/expenses/new?project=${project.id}`}>
+                  <WalletIcon />
+                  Catat Pengeluaran
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="destructive">
+                <Link href={`/operations/incidents/new?project=${project.id}`}>
+                  <TriangleAlertIcon />
+                  Lapor Insiden
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
                 <Link href="/field/workers/new">
                   <UserPlusIcon />
                   Tambah Pekerja Lokal

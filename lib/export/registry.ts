@@ -2,7 +2,7 @@ import "server-only";
 
 import { auditActionLabel, auditTableLabel, describeChanges, type AuditEntry } from "@/lib/audit/labels";
 import { parseAuditListParams, queryAuditLog } from "@/lib/audit/queries";
-import { APP_ROLES, ROLE_LABELS, type AppRole } from "@/lib/auth/roles";
+import { APP_ROLES, ROLE_LABELS } from "@/lib/auth/roles";
 import {
   EMPLOYEE_VIEW_ROLES,
   EMPLOYMENT_STATUS_LABELS,
@@ -11,7 +11,14 @@ import {
   type EmployeeRow,
 } from "@/lib/employees/labels";
 import { parseEmployeeListParams, queryEmployees } from "@/lib/employees/queries";
+import { defineExport, type ExportDefinition } from "@/lib/export/define";
 import type { ExportColumn } from "@/lib/export/xlsx";
+import { PAYABLE_EXPORTS } from "@/lib/bills/exports";
+import { INVOICE_EXPORTS } from "@/lib/invoices/exports";
+import { K3_EXPORTS } from "@/lib/k3/exports";
+import { MATERIAL_EXPORTS } from "@/lib/materials/exports";
+import { PAYROLL_EXPORTS } from "@/lib/payroll/exports";
+import { PL_EXPORTS } from "@/lib/pl/exports";
 import {
   ACTIVITY_KIND_LABELS,
   CLIENT_KIND_LABELS,
@@ -58,7 +65,6 @@ import { parseNoteListParams, parseToolListParams, queryNotes, queryTools } from
 import { progressCells, projectProgress, projectSections, projectStages } from "@/lib/progress/queries";
 import { TENDER_STATUS_LABELS, type TenderRow } from "@/lib/tenders/labels";
 import { parseTenderListParams, queryTenders } from "@/lib/tenders/queries";
-import type { RawSearchParams } from "@/lib/list/params";
 import {
   CERTIFICATE_STATUS_LABELS,
   CERTIFICATE_VIEW_ROLES,
@@ -84,22 +90,6 @@ import { parseNotificationListParams, queryNotifications, type NotificationItem 
 import { USER_STATUS_LABELS, parseUserListParams, queryUsers, type UserRow } from "@/lib/users/queries";
 
 const MAX_ROWS = 10000;
-
-type ExportDefinition<T> = {
-  roles: readonly AppRole[];
-  fileBase: string;
-  sheetName: string;
-  columns: ExportColumn<T>[];
-  /**
-   * Rows matching the list's URL params (same query as the page). An export
-   * whose columns depend on the data (e.g. a project's stages) returns them here.
-   */
-  load: (params: RawSearchParams) => Promise<{ rows: T[]; count: number; columns?: ExportColumn<T>[] }>;
-};
-
-function defineExport<T>(definition: ExportDefinition<T>) {
-  return definition as ExportDefinition<unknown>;
-}
 
 /** Export per list key, used by /api/export/[list] (UMM-04). */
 export const EXPORTS: Record<string, ExportDefinition<unknown>> = {
@@ -471,6 +461,13 @@ export const EXPORTS: Record<string, ExportDefinition<unknown>> = {
       }),
     ]),
   ),
+
+  ...MATERIAL_EXPORTS,
+  ...K3_EXPORTS,
+  ...INVOICE_EXPORTS,
+  ...PAYABLE_EXPORTS,
+  ...PL_EXPORTS,
+  ...PAYROLL_EXPORTS,
 };
 
 export { MAX_ROWS };

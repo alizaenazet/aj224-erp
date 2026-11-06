@@ -6,6 +6,8 @@ import { ContentSkeleton } from "@/components/app/content-skeleton";
 import { AddendaCard } from "@/components/projects/addenda-card";
 import { ContractCard } from "@/components/projects/contract-card";
 import { TermsCard } from "@/components/projects/terms-card";
+import { INVOICE_VIEW_ROLES } from "@/lib/invoices/labels";
+import { termInvoices } from "@/lib/invoices/queries";
 import { hasAnyRole } from "@/lib/auth/roles";
 import { requireProfile } from "@/lib/auth/session";
 import {
@@ -37,7 +39,11 @@ async function ProjectContract({ params }: { params: Params }) {
   const project = await getProject((await params).id);
   if (!project) notFound();
 
-  const [addenda, terms] = await Promise.all([projectAddenda(project.id), projectTerms(project.id)]);
+  const [addenda, terms, invoices] = await Promise.all([
+    projectAddenda(project.id),
+    projectTerms(project.id),
+    hasAnyRole(profile.role, INVOICE_VIEW_ROLES) ? termInvoices(project.id) : Promise.resolve({}),
+  ]);
   const canManage = hasAnyRole(profile.role, PROJECT_MANAGE_ROLES);
 
   return (
@@ -50,6 +56,8 @@ async function ProjectContract({ params }: { params: Params }) {
         contractValue={project.contract_value}
         canManage={canManage}
         canMarkReady={hasAnyRole(profile.role, TERM_READY_ROLES)}
+        invoices={invoices}
+        canInvoice={profile.role === "finance"}
       />
     </div>
   );

@@ -21,6 +21,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { useHydrated } from "@/hooks/use-hydrated";
 import { authErrorMessage } from "@/lib/auth/errors";
 import { createClient } from "@/lib/supabase/client";
 
@@ -37,6 +38,7 @@ const schema = z
 type Values = z.infer<typeof schema>;
 
 export function SetPasswordForm() {
+  const hydrated = useHydrated();
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<Values>({
@@ -68,7 +70,8 @@ export function SetPasswordForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+        {/* method="post": a submit before hydration must never put credentials in the URL. */}
+        <form method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate>
           <FieldGroup>
             {error ? (
               <Alert variant="destructive">
@@ -116,7 +119,7 @@ export function SetPasswordForm() {
                 </Field>
               )}
             />
-            <Button type="submit" disabled={form.formState.isSubmitting}>
+            <Button type="submit" disabled={!hydrated || form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Menyimpan…" : "Simpan kata sandi"}
             </Button>
           </FieldGroup>

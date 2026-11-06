@@ -9,7 +9,8 @@ import { PrintToolbar } from "@/components/print/print-toolbar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requireRole } from "@/lib/auth/session";
 import { CONDITION_LABELS, EQUIPMENT_VIEW_ROLES } from "@/lib/equipment/labels";
-import { getNote, noteLines } from "@/lib/equipment/queries";
+import { getNote, noteLines, noteMaterialLines } from "@/lib/equipment/queries";
+import { formatQuantity } from "@/lib/materials/labels";
 import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Cetak Surat Jalan" };
@@ -34,7 +35,7 @@ async function PrintDeliveryNote({ params }: { params: Params }) {
 
   const note = await getNote((await params).id);
   if (!note) notFound();
-  const lines = await noteLines(note.id);
+  const [lines, materialLines] = await Promise.all([noteLines(note.id), noteMaterialLines(note.id)]);
 
   const header: [string, string][] = [
     ["Nomor", note.number],
@@ -57,6 +58,7 @@ async function PrintDeliveryNote({ params }: { params: Params }) {
           </div>
         ))}
       </dl>
+      {lines.length ? (
       <Table>
         <TableHeader>
           <TableRow>
@@ -79,6 +81,31 @@ async function PrintDeliveryNote({ params }: { params: Params }) {
           ))}
         </TableBody>
       </Table>
+      ) : null}
+      {materialLines.length ? (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>No.</TableHead>
+              <TableHead>Kode</TableHead>
+              <TableHead>Nama material</TableHead>
+              <TableHead className="text-right">Jumlah</TableHead>
+              <TableHead>Satuan</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {materialLines.map((line, index) => (
+              <TableRow key={line.id}>
+                <TableCell>{lines.length + index + 1}</TableCell>
+                <TableCell>{line.material_code}</TableCell>
+                <TableCell className="whitespace-normal">{line.material_name}</TableCell>
+                <TableCell className="text-right">{formatQuantity(line.quantity)}</TableCell>
+                <TableCell>{line.unit_code}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : null}
       {note.notes ? <p className="text-sm">Catatan: {note.notes}</p> : null}
       <div className="grid grid-cols-3 gap-6 pt-8 text-center text-sm">
         {["Pengirim", "Sopir", "Penerima"].map((role) => (

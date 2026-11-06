@@ -5,6 +5,9 @@ import { attendanceTemplate } from "@/lib/import/templates/attendance";
 import { certificatesTemplate } from "@/lib/import/templates/certificates";
 import { clientsTemplate } from "@/lib/import/templates/clients";
 import { employeesTemplate } from "@/lib/import/templates/employees";
+import { materialsTemplate } from "@/lib/import/templates/materials";
+import { openingBillsTemplate, openingCostsTemplate, openingKasbonTemplate } from "@/lib/import/templates/opening-finance";
+import { openingInvoicesTemplate } from "@/lib/import/templates/opening-invoices";
 import { sectionsTemplate } from "@/lib/import/templates/sections";
 import { suppliersTemplate } from "@/lib/import/templates/suppliers";
 import { tendersTemplate } from "@/lib/import/templates/tenders";
@@ -22,6 +25,11 @@ export const IMPORT_TEMPLATES: Record<string, ImportTemplate> = Object.fromEntri
     tendersTemplate,
     sectionsTemplate,
     toolsTemplate,
+    materialsTemplate,
+    openingInvoicesTemplate,
+    openingBillsTemplate,
+    openingCostsTemplate,
+    openingKasbonTemplate,
   ].map((template) => [
     template.key,
     template as ImportTemplate,

@@ -520,3 +520,235 @@ end;
 $$;
 
 select set_config('request.jwt.claims', '', false);
+
+-- Materials and stock (dev) — add-material-stock
+-- Created as Operasional; Lukman (Lapangan) records the recent usage. Grease
+-- ends below its minimum at the warehouse, and a material-only surat jalan
+-- waits for receipt at Kediri – Pare.
+insert into public.suppliers (name, category, contact_name, phone, payment_term_days) values
+  ('UD Sumber Teknik', 'material', 'Agus Salim', '081255443322', 14);
+
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000006","role":"authenticated"}', false);
+
+do $$
+declare
+  warehouse uuid := (select id from public.locations where code = 'GDG-LMG');
+  site uuid := (select location_id from public.projects where id = '60000000-0000-4000-8000-000000000001');
+  consumable uuid := (select id from public.item_categories where kind = 'material' and name = 'Consumable');
+  conductor uuid := (select id from public.item_categories where kind = 'material' and name = 'Konduktor & Kawat');
+  insulator uuid := (select id from public.item_categories where kind = 'material' and name = 'Insulator');
+  supplier uuid := (select id from public.suppliers where name = 'UD Sumber Teknik');
+  grease uuid;
+  diesel uuid;
+  acsr uuid;
+  insulators uuid;
+begin
+  grease := public.create_material(jsonb_build_object('code', 'GRS-01', 'name', 'Grease konduktor', 'unit_code', 'kg',
+    'category_id', consumable, 'ownership', 'company', 'min_stock', 20), warehouse, 25);
+  diesel := public.create_material(jsonb_build_object('code', 'BBM-SLR', 'name', 'Solar mesin puller', 'unit_code', 'liter',
+    'category_id', consumable, 'ownership', 'company', 'min_stock', 100), warehouse, 300);
+  acsr := public.create_material(jsonb_build_object('code', 'ACSR-ZB', 'name', 'Konduktor ACSR Zebra 430 mm²', 'unit_code', 'm',
+    'category_id', conductor, 'ownership', 'client'));
+  insulators := public.create_material(jsonb_build_object('code', 'INS-150', 'name', 'Insulator string 150 kV', 'unit_code', 'set',
+    'category_id', insulator, 'ownership', 'client'));
+
+  perform public.record_material_transaction(
+    jsonb_build_object('kind', 'receipt', 'location_id', site, 'txn_date', public.today_wib() - 30, 'source', 'client',
+      'doc_no', 'BA-17/UIP-JBTB', 'notes', 'Material titipan tahap 1'),
+    jsonb_build_array(jsonb_build_object('material_id', acsr, 'quantity', 3000),
+                      jsonb_build_object('material_id', insulators, 'quantity', 60)));
+  perform public.record_material_transaction(
+    jsonb_build_object('kind', 'receipt', 'location_id', warehouse, 'txn_date', public.today_wib() - 20, 'source', 'supplier',
+      'supplier_id', supplier, 'doc_no', 'NT-0931'),
+    jsonb_build_array(jsonb_build_object('material_id', diesel, 'quantity', 200)));
+  perform public.record_material_transaction(
+    jsonb_build_object('kind', 'usage', 'location_id', site, 'txn_date', public.today_wib() - 10,
+      'section_id', '70000000-0000-4000-8000-000000000002', 'notes', 'Penarikan konduktor S-02'),
+    jsonb_build_array(jsonb_build_object('material_id', acsr, 'quantity', 1200),
+                      jsonb_build_object('material_id', insulators, 'quantity', 24)));
+
+  perform public.send_delivery_note(
+    jsonb_build_object('from_location_id', warehouse, 'to_location_id', site, 'note_date', public.today_wib(),
+      'vehicle', 'Pick-up L 8812 CD', 'driver', 'Andi Wijaya'),
+    '[]'::jsonb,
+    jsonb_build_array(jsonb_build_object('material_id', grease, 'quantity', 10),
+                      jsonb_build_object('material_id', diesel, 'quantity', 150)));
+
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000007","role":"authenticated"}', false);
+  perform public.record_material_transaction(
+    jsonb_build_object('kind', 'usage', 'location_id', site, 'txn_date', public.today_wib() - 1,
+      'section_id', '70000000-0000-4000-8000-000000000003', 'notes', 'Penarikan konduktor S-03'),
+    jsonb_build_array(jsonb_build_object('material_id', acsr, 'quantity', 600)));
+end;
+$$;
+
+select set_config('request.jwt.claims', '', false);
+
+-- K3 incidents (dev) — add-k3-incidents
+-- Lukman reports two incidents at Kediri – Pare; Operasional investigates. The
+-- near miss is closed; the first-aid case has one overdue open action. No LTI,
+-- so LTI-free days count from the project start.
+do $$
+declare
+  site_project uuid := '60000000-0000-4000-8000-000000000001';
+  crew_member uuid := (select employee_id from public.assignments where project_id = '60000000-0000-4000-8000-000000000001' order by start_date, employee_id limit 1);
+  pic uuid := (select employee_id from public.assignments where project_id = '60000000-0000-4000-8000-000000000001' order by start_date desc, employee_id limit 1);
+  near_miss uuid;
+  first_aid uuid;
+  action_id uuid;
+begin
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000007","role":"authenticated"}', false);
+  near_miss := public.save_incident(null, jsonb_build_object(
+    'project_id', site_project, 'occurred_at', (now() - interval '20 days')::text,
+    'section_id', '70000000-0000-4000-8000-000000000002', 'location_note', 'T.09',
+    'classification', 'near_miss',
+    'chronology', 'Tali pilot wire lepas dari pulley saat penarikan; tidak ada korban.',
+    'immediate_action', 'Penarikan dihentikan, pulley diperiksa ulang.'), '[]'::jsonb);
+  first_aid := public.save_incident(null, jsonb_build_object(
+    'project_id', site_project, 'occurred_at', (now() - interval '5 days')::text,
+    'section_id', '70000000-0000-4000-8000-000000000003', 'location_note', 'T.14',
+    'classification', 'first_aid',
+    'chronology', 'Tangan pekerja tergores kawat saat pemasangan clamp.',
+    'body_parts', 'Telapak tangan kiri', 'witnesses', 'Mandor S-03',
+    'immediate_action', 'Luka dibersihkan dan diperban dengan kotak P3K.'),
+    jsonb_build_array(jsonb_build_object('employee_id', crew_member, 'involvement', 'victim', 'injury', 'Luka gores ringan')));
+
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000006","role":"authenticated"}', false);
+  perform public.save_incident_investigation(near_miss, jsonb_build_object(
+    'direct_cause', 'Pulley tidak terkunci', 'root_cause', 'method', 'lost_days', 0));
+  action_id := public.save_incident_action(null, near_miss, jsonb_build_object(
+    'description', 'Tambahkan pengecekan kunci pulley di toolbox meeting', 'pic_employee_id', pic,
+    'due_date', (public.today_wib() - 15)::text));
+  perform public.complete_incident_action(action_id, 'Sudah masuk checklist toolbox meeting');
+  perform public.close_incident(near_miss);
+
+  perform public.save_incident_investigation(first_aid, jsonb_build_object(
+    'direct_cause', 'Sarung tangan tidak dipakai', 'root_cause', 'human', 'lost_days', 0));
+  perform public.save_incident_action(null, first_aid, jsonb_build_object(
+    'description', 'Pembagian sarung tangan kerja baru untuk kru S-03', 'pic_employee_id', pic,
+    'due_date', (public.today_wib() - 1)::text));
+end;
+$$;
+
+select set_config('request.jwt.claims', '', false);
+
+-- Receivables (dev) — add-receivables
+-- The company is PKP with one bank account. Kediri – Pare's Uang Muka was
+-- invoiced 35 days ago (due after 30 days, so 5 days overdue) and is partly
+-- paid; Tuban has a Draft invoice for extra work.
+update public.company_profile set is_pkp = true, npwp = '01.234.567.8-645.000', phone = '0322-123456';
+insert into public.company_bank_accounts (bank_name, account_number, account_holder, is_default)
+values ('Bank Mandiri', '1420012345678', 'UD. AJ224', true);
+
+do $$
+declare
+  dp_invoice uuid;
+begin
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000004","role":"authenticated"}', false);
+  dp_invoice := public.save_invoice(null, jsonb_build_object(
+    'kind', 'term',
+    'term_id', (select id from public.project_terms where project_id = '60000000-0000-4000-8000-000000000001' and sort_order = 1),
+    'invoice_date', (public.today_wib() - 35)::text));
+  perform public.issue_invoice(dp_invoice);
+  perform public.record_invoice_payment(dp_invoice, jsonb_build_object(
+    'payment_date', (public.today_wib() - 20)::text, 'amount_received', 1000000000,
+    'bank_account_id', (select id from public.company_bank_accounts limit 1), 'notes', 'Transfer tahap 1'));
+  perform public.save_invoice(null, jsonb_build_object(
+    'kind', 'other', 'project_id', '60000000-0000-4000-8000-000000000003',
+    'description', 'Pekerjaan tambah: perkuatan pondasi T.22', 'gross_amount', 150000000));
+end;
+$$;
+
+select set_config('request.jwt.claims', '', false);
+
+-- Payables, expenses, field cash and kasbon (dev) — add-payables-expenses
+-- A split rental bill (due in 3 days, partly paid), a direct expense without
+-- receipt, project cost to cut-off, a field cash top-up with Lukman's
+-- spending (approved fuel, approved kasbon, one pending) and an HCM kasbon.
+do $$
+declare
+  site uuid := '60000000-0000-4000-8000-000000000001';
+  rental uuid := (select id from public.suppliers where name = 'CV Sarana Stringing');
+  cat_rental uuid := (select id from public.cost_categories where code = 'RENTAL');
+  cat_overhead uuid := (select id from public.cost_categories where code = 'OVERHEAD');
+  cat_permit uuid := (select id from public.cost_categories where code = 'PERMIT');
+  cat_wages uuid := (select id from public.cost_categories where code = 'WAGES');
+  cat_fuel uuid := (select id from public.cost_categories where code = 'FUEL');
+  cat_accom uuid := (select id from public.cost_categories where code = 'ACCOM');
+  crew uuid := (select employee_id from public.assignments where project_id = '60000000-0000-4000-8000-000000000001' order by start_date desc, employee_id limit 1);
+  office_staff uuid := (select id from public.employees where work_type = 'office' order by employee_no limit 1);
+  bill uuid;
+  fuel uuid;
+  advance uuid;
+begin
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000004","role":"authenticated"}', false);
+  bill := public.save_supplier_bill(null,
+    jsonb_build_object('supplier_id', rental, 'bill_no', 'NS-221', 'bill_date', (public.today_wib() - 27)::text),
+    jsonb_build_array(
+      jsonb_build_object('description', 'Sewa tensioner TN-01 (12 hari)', 'amount', 9000000, 'project_id', site, 'cost_category_id', cat_rental),
+      jsonb_build_object('description', 'Sewa genset kantor', 'amount', 1000000, 'project_id', null, 'cost_category_id', cat_overhead)));
+  perform public.record_supplier_payment(bill, jsonb_build_object('payment_date', (public.today_wib() - 10)::text, 'amount', 4000000,
+    'bank_account_id', (select id from public.company_bank_accounts limit 1)));
+  perform public.save_expense(null, jsonb_build_object('expense_date', (public.today_wib() - 8)::text, 'project_id', site,
+    'cost_category_id', cat_permit, 'amount', 2000000, 'payee', 'Kepala Desa Gurah', 'method', 'cash',
+    'description', 'Kompensasi warga crossing T.09', 'no_receipt', true, 'no_receipt_note', 'Diserahkan langsung ke kepala desa'));
+  perform public.save_expense(null, jsonb_build_object('expense_date', (public.today_wib() - 45)::text, 'project_id', site,
+    'cost_category_id', cat_wages, 'amount', 150000000, 'description', 'Saldo awal biaya s.d. cut-off', 'is_opening', true));
+  perform public.record_field_cash_movement(jsonb_build_object('project_id', site, 'kind', 'topup',
+    'movement_date', (public.today_wib() - 14)::text, 'amount', 20000000, 'method', 'transfer'));
+
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000007","role":"authenticated"}', false);
+  fuel := public.record_field_cash_expense(jsonb_build_object('project_id', site, 'expense_date', (public.today_wib() - 2)::text,
+    'kind', 'project_cost', 'cost_category_id', cat_fuel, 'amount', 1500000, 'description', 'Solar puller dan genset',
+    'no_receipt', true, 'no_receipt_note', 'Nota tertinggal di SPBU'));
+  advance := public.record_field_cash_expense(jsonb_build_object('project_id', site, 'expense_date', (public.today_wib() - 1)::text,
+    'kind', 'kasbon', 'employee_id', crew, 'installment_amount', 250000, 'amount', 1000000, 'description', 'Kasbon keperluan keluarga',
+    'no_receipt', true, 'no_receipt_note', 'Tanda terima ditandatangani'));
+  perform public.record_field_cash_expense(jsonb_build_object('project_id', site, 'expense_date', public.today_wib()::text,
+    'kind', 'project_cost', 'cost_category_id', cat_accom, 'amount', 500000, 'description', 'Konsumsi lembur kru',
+    'no_receipt', true, 'no_receipt_note', 'Warung tidak memberi nota'));
+
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000004","role":"authenticated"}', false);
+  perform public.verify_field_cash_expense(fuel, true, null);
+  perform public.verify_field_cash_expense(advance, true, null);
+
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000005","role":"authenticated"}', false);
+  if office_staff is not null then
+    perform public.save_kasbon(jsonb_build_object('employee_id', office_staff, 'kasbon_date', (public.today_wib() - 20)::text,
+      'amount', 600000, 'installment_amount', 200000, 'description', 'Kasbon biaya sekolah'));
+  end if;
+end;
+$$;
+
+select set_config('request.jwt.claims', '', false);
+
+-- Payroll (dev) — add-payroll
+-- A field period over the last six days (ending yesterday so today's sheet
+-- stays editable) is generated, given one incentive, submitted and approved;
+-- an office period for last month stays Draft.
+do $$
+declare
+  field_period uuid;
+  office_period uuid;
+  budi uuid := (select id from public.employees where employee_no = 'AJ-0103');
+begin
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000005","role":"authenticated"}', false);
+  field_period := public.create_payroll_period(jsonb_build_object(
+    'name', 'Lapangan ' || to_char(public.today_wib() - 6, 'DD/MM') || '–' || to_char(public.today_wib() - 1, 'DD/MM'),
+    'period_start', (public.today_wib() - 6)::text, 'period_end', (public.today_wib() - 1)::text, 'group_kind', 'field'));
+  perform public.generate_payroll(field_period);
+  perform public.save_payslip_adjustment(jsonb_build_object('period_id', field_period, 'employee_id', budi,
+    'kind', 'incentive', 'amount', 150000, 'note', 'Insentif target penarikan S-02'));
+  perform public.submit_payroll(field_period);
+  office_period := public.create_payroll_period(jsonb_build_object(
+    'name', 'Kantor ' || to_char(date_trunc('month', public.today_wib()) - interval '1 month', 'MM/YYYY'),
+    'period_start', (date_trunc('month', public.today_wib()) - interval '1 month')::date::text,
+    'period_end', (date_trunc('month', public.today_wib()) - interval '1 day')::date::text, 'group_kind', 'office'));
+  perform public.generate_payroll(office_period);
+
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000000002","role":"authenticated"}', false);
+  perform public.approve_payroll(field_period);
+end;
+$$;
+
+select set_config('request.jwt.claims', '', false);

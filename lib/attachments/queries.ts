@@ -46,3 +46,23 @@ export async function signedAttachmentUrl(
     .createSignedUrl(data.path, expiresIn);
   return signed?.signedUrl ?? null;
 }
+
+/** Signed URLs of every image in a category, oldest first (print layouts). */
+export async function signedImageUrls(entityType: AttachmentEntityType, entityId: string, category: string, expiresIn = 600) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("attachments")
+    .select("bucket, path, file_name, mime_type, created_at")
+    .eq("entity_type", entityType)
+    .eq("entity_id", entityId)
+    .eq("category", category)
+    .like("mime_type", "image/%")
+    .order("created_at");
+  const rows = data ?? [];
+  if (!rows.length) return [];
+  const { data: signed } = await supabase.storage.from(rows[0].bucket).createSignedUrls(
+    rows.map((row) => row.path),
+    expiresIn,
+  );
+  return rows.map((row, index) => ({ url: signed?.[index]?.signedUrl ?? null, file_name: row.file_name, created_at: row.created_at }));
+}

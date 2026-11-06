@@ -65,3 +65,31 @@ export function formatDateTime(value: DateInput) {
 export function todayWib() {
   return new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
+
+const SATUAN = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+
+function spell(value: number): string {
+  if (value < 12) return SATUAN[value];
+  if (value < 20) return `${spell(value - 10)} belas`;
+  if (value < 100) return `${spell(Math.floor(value / 10))} puluh ${spell(value % 10)}`.trim();
+  if (value < 200) return `seratus ${spell(value - 100)}`.trim();
+  if (value < 1000) return `${spell(Math.floor(value / 100))} ratus ${spell(value % 100)}`.trim();
+  if (value < 2000) return `seribu ${spell(value - 1000)}`.trim();
+  const scales: [number, string][] = [
+    [1_000_000_000_000, "triliun"],
+    [1_000_000_000, "miliar"],
+    [1_000_000, "juta"],
+    [1000, "ribu"],
+  ];
+  for (const [size, word] of scales) {
+    if (value >= size) return `${spell(Math.floor(value / size))} ${word} ${spell(value % size)}`.trim();
+  }
+  return "";
+}
+
+/** Amount in Indonesian words for invoices and receipts: 444000000 → "empat ratus empat puluh empat juta rupiah". */
+export function terbilang(value: number | null | undefined) {
+  const amount = Math.round(Math.abs(Number(value ?? 0)));
+  const words = amount === 0 ? "nol" : spell(amount).replace(/\s+/g, " ");
+  return `${words} rupiah`;
+}

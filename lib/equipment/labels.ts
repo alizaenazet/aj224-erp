@@ -139,3 +139,15 @@ export type NoteLine = {
   missing: number | null;
   receipt_note: string | null;
 };
+
+export type NoteMaterialLine = {
+  id: string;
+  material_id: string;
+  material_code: string;
+  material_name: string;
+  unit_code: string;
+  quantity: number;
+  received_quantity: number | null;
+  missing: number | null;
+  receipt_note: string | null;
+};

@@ -14,7 +14,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { listAttachments } from "@/lib/attachments/queries";
 import { requireRole } from "@/lib/auth/session";
 import { EQUIPMENT_VIEW_ROLES } from "@/lib/equipment/labels";
-import { getNote, noteLines, userLocationIds } from "@/lib/equipment/queries";
+import { getNote, noteLines, noteMaterialLines, userLocationIds } from "@/lib/equipment/queries";
+import { formatQuantity } from "@/lib/materials/labels";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { peopleNames } from "@/lib/people";
 
@@ -38,8 +39,9 @@ async function DeliveryNoteContent({ params }: { params: Params }) {
   const note = await getNote((await params).id);
   if (!note) notFound();
 
-  const [lines, photos, names, myLocations] = await Promise.all([
+  const [lines, materialLines, photos, names, myLocations] = await Promise.all([
     noteLines(note.id),
+    noteMaterialLines(note.id),
     listAttachments("delivery_note", note.id),
     peopleNames(),
     profile.role === "field" ? userLocationIds() : Promise.resolve(new Set<string>()),
@@ -95,6 +97,7 @@ async function DeliveryNoteContent({ params }: { params: Params }) {
         </CardContent>
       </Card>
 
+      {lines.length ? (
       <Card>
         <CardHeader>
           <CardTitle>Daftar alat</CardTitle>
@@ -142,12 +145,59 @@ async function DeliveryNoteContent({ params }: { params: Params }) {
           </Table>
         </CardContent>
       </Card>
+      ) : null}
+
+      {materialLines.length ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Daftar material</CardTitle>
+            {received && note.receipt_note && !lines.length ? <CardDescription>{note.receipt_note}</CardDescription> : null}
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Material</TableHead>
+                  <TableHead className="text-right">Dikirim</TableHead>
+                  {received ? (
+                    <>
+                      <TableHead className="text-right">Diterima</TableHead>
+                      <TableHead className="text-right">Kurang</TableHead>
+                      <TableHead>Keterangan</TableHead>
+                    </>
+                  ) : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {materialLines.map((line) => (
+                  <TableRow key={line.id}>
+                    <TableCell className="max-w-72 whitespace-normal">
+                      <span className="font-medium">{line.material_code}</span>
+                      <div className="text-xs text-muted-foreground">{line.material_name}</div>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatQuantity(line.quantity)} {line.unit_code}
+                    </TableCell>
+                    {received ? (
+                      <>
+                        <TableCell className="text-right tabular-nums">{formatQuantity(line.received_quantity)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{line.missing ? formatQuantity(line.missing) : "—"}</TableCell>
+                        <TableCell className="max-w-64 whitespace-normal">{line.receipt_note ?? "—"}</TableCell>
+                      </>
+                    ) : null}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {canReceive || photos.rows.length ? (
         <Card id="foto">
           <CardHeader>
             <CardTitle>Foto penerimaan</CardTitle>
-            <CardDescription>Wajib minimal satu foto bila ada alat rusak atau kurang.</CardDescription>
+            <CardDescription>Wajib minimal satu foto bila ada alat rusak atau barang kurang.</CardDescription>
           </CardHeader>
           <CardContent>
             <AttachmentList
@@ -161,7 +211,7 @@ async function DeliveryNoteContent({ params }: { params: Params }) {
         </Card>
       ) : null}
 
-      {canReceive ? <ReceiptForm noteId={note.id} lines={lines} hasPhoto={photos.rows.length > 0} /> : null}
+      {canReceive ? <ReceiptForm noteId={note.id} lines={lines} materialLines={materialLines} hasPhoto={photos.rows.length > 0} /> : null}
     </div>
   );
 }

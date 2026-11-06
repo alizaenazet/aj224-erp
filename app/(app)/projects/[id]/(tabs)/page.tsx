@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ContentSkeleton } from "@/components/app/content-skeleton";
+import { ProjectSummaryCards } from "@/components/pl/project-summary-cards";
 import { TermStatusBadge } from "@/components/projects/project-status-badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -110,6 +111,7 @@ async function ProjectSummary({ params }: { params: Params }) {
       : null;
 
   return (
+    <div className="flex flex-col gap-4">
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="lg:col-span-2">
         <CardHeader>
@@ -224,6 +226,8 @@ async function ProjectSummary({ params }: { params: Params }) {
           </Card>
         ) : null}
       </div>
+    </div>
+      <ProjectSummaryCards project={project} role={profile.role} />
     </div>
   );
 }

@@ -21,6 +21,11 @@ import { PROGRESS_VIEW_ROLES } from "@/lib/progress/labels";
 import { TEAM_VIEW_ROLES } from "@/lib/attendance/labels";
 import { REPORT_VIEW_ROLES } from "@/lib/daily-reports/labels";
 import { EQUIPMENT_VIEW_ROLES } from "@/lib/equipment/labels";
+import { K3_VIEW_ROLES } from "@/lib/k3/labels";
+import { MATERIAL_VIEW_ROLES } from "@/lib/materials/labels";
+import { CloseProjectButton } from "@/components/pl/close-project-dialog";
+import { PROJECT_CLOSE_ROLES } from "@/lib/pl/labels";
+import { closeChecklist } from "@/lib/pl/queries";
 
 type Params = Promise<{ id: string }>;
 
@@ -52,6 +57,8 @@ async function ProjectHeader({ params }: { params: Params }) {
 
   const project = await getProject((await params).id);
   if (!project) notFound();
+  const checklist =
+    project.status === "completed" && hasAnyRole(profile.role, PROJECT_CLOSE_ROLES) ? await closeChecklist(project.id) : null;
 
   const tabs: ProjectTab[] = [
     { segment: "", label: "Ringkasan" },
@@ -61,6 +68,8 @@ async function ProjectHeader({ params }: { params: Params }) {
     ...(hasAnyRole(profile.role, REPORT_VIEW_ROLES) ? [{ segment: "reports", label: "Laporan Harian" }] : []),
     ...(hasAnyRole(profile.role, TEAM_VIEW_ROLES) ? [{ segment: "team", label: "Tim & Absensi" }] : []),
     ...(hasAnyRole(profile.role, EQUIPMENT_VIEW_ROLES) ? [{ segment: "equipment", label: "Alat" }] : []),
+    ...(hasAnyRole(profile.role, MATERIAL_VIEW_ROLES) ? [{ segment: "materials", label: "Material" }] : []),
+    ...(hasAnyRole(profile.role, K3_VIEW_ROLES) ? [{ segment: "k3", label: "K3" }] : []),
     { segment: "documents", label: "Dokumen" },
   ];
 
@@ -70,12 +79,15 @@ async function ProjectHeader({ params }: { params: Params }) {
         title={project.name}
         description={[project.code, project.client_name].filter(Boolean).join(" · ")}
         actions={
-          <ProjectActions
-            project={project}
-            canEdit={hasAnyRole(profile.role, PROJECT_MANAGE_ROLES)}
-            canSetStatus={hasAnyRole(profile.role, PROJECT_STATUS_ROLES) && project.status !== "closed"}
-            canViewHistory={hasAnyRole(profile.role, ["super_admin", "director"])}
-          />
+          <>
+            {checklist ? <CloseProjectButton projectId={project.id} checklist={checklist} isDirector={profile.role === "director"} /> : null}
+            <ProjectActions
+              project={project}
+              canEdit={hasAnyRole(profile.role, PROJECT_MANAGE_ROLES)}
+              canSetStatus={hasAnyRole(profile.role, PROJECT_STATUS_ROLES) && project.status !== "closed"}
+              canViewHistory={hasAnyRole(profile.role, ["super_admin", "director"])}
+            />
+          </>
         }
       />
       <div className="flex flex-wrap gap-2">

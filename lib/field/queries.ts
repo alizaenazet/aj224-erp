@@ -12,10 +12,13 @@ export type FieldProject = {
   site: string | null;
   status: ProjectStatus;
   progress: number | null;
+  location_id: string | null;
   crew_today: number;
   recorded_today: number;
   /** Today's daily report, if sent (OPS-01). */
   report_today: { id: string; status: string } | null;
+  /** Field cash balance (FIN-10); null when the project has no field cash yet. */
+  cash_balance: number | null;
   /** Delivery notes to the project waiting for receipt (ALT-04). */
   incoming_notes: { id: string; number: string }[];
 };
@@ -36,7 +39,7 @@ export async function fieldProjects(): Promise<FieldProject[]> {
 
   return Promise.all(
     (projects ?? []).map(async (project) => {
-      const [crew, { count }, { data: report }, { data: incoming }] = await Promise.all([
+      const [crew, { count }, { data: report }, { data: incoming }, { data: cash }] = await Promise.all([
         projectCrew(project.id, today),
         supabase
           .from("attendance")
@@ -57,6 +60,7 @@ export async function fieldProjects(): Promise<FieldProject[]> {
               .eq("status", "sent")
               .order("note_date")
           : Promise.resolve({ data: [] as { id: string; number: string }[] }),
+        supabase.from("field_cash_balances").select("balance").eq("project_id", project.id).maybeSingle(),
       ]);
       return {
         id: project.id,
@@ -65,10 +69,12 @@ export async function fieldProjects(): Promise<FieldProject[]> {
         site: project.site,
         status: project.status as ProjectStatus,
         progress: project.progress === null ? null : Number(project.progress),
+        location_id: project.location_id,
         crew_today: crew.length,
         recorded_today: count ?? 0,
         report_today: report ?? null,
         incoming_notes: incoming ?? [],
+        cash_balance: cash ? Number(cash.balance) : null,
       };
     }),
   );

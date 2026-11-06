@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CONDITIONS, OWNERSHIPS, RENTAL_PERIODS, SENDABLE_CONDITIONS, TRACKINGS } from "@/lib/equipment/labels";
+import { quantitySchema } from "@/lib/materials/schema";
 
 // Shared by forms and actions; each schema accepts its own output.
 
@@ -98,12 +99,17 @@ export const deliveryNoteSchema = z
           condition: z.enum(SENDABLE_CONDITIONS),
           quantity: quantity("Jumlah"),
         }),
-      )
-      .min(1, "Tambahkan minimal satu alat."),
+      ),
+    // MAT-04: material lines on the same note.
+    material_lines: z.array(z.object({ material_id: z.uuid("Pilih material."), quantity: quantitySchema("Jumlah material") })),
   })
   .refine((values) => values.from_location_id !== values.to_location_id, {
     path: ["to_location_id"],
     message: "Lokasi tujuan harus berbeda dari asal.",
+  })
+  .refine((values) => values.lines.length + values.material_lines.length > 0, {
+    path: ["lines"],
+    message: "Tambahkan minimal satu alat atau material.",
   });
 
 export type DeliveryNoteInput = z.output<typeof deliveryNoteSchema>;
@@ -115,6 +121,13 @@ export const receiptSchema = z.object({
       line_id: z.uuid(),
       received_good: z.number().int().min(0),
       received_damaged: z.number().int().min(0),
+      receipt_note: z.preprocess(emptyToNull, z.string().max(300).nullable()),
+    }),
+  ),
+  material_lines: z.array(
+    z.object({
+      line_id: z.uuid(),
+      received_quantity: z.number().min(0),
       receipt_note: z.preprocess(emptyToNull, z.string().max(300).nullable()),
     }),
   ),

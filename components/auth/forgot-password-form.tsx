@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { useHydrated } from "@/hooks/use-hydrated";
 import { authErrorMessage } from "@/lib/auth/errors";
 import { createClient } from "@/lib/supabase/client";
 
@@ -27,6 +28,7 @@ const schema = z.object({
 type Values = z.infer<typeof schema>;
 
 export function ForgotPasswordForm() {
+  const hydrated = useHydrated();
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,7 +73,7 @@ export function ForgotPasswordForm() {
             </AlertDescription>
           </Alert>
         ) : (
-          <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+        <form method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate>
             <FieldGroup>
               {error ? (
                 <Alert variant="destructive">
@@ -98,7 +100,7 @@ export function ForgotPasswordForm() {
                   </Field>
                 )}
               />
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button type="submit" disabled={!hydrated || form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Mengirim…" : "Kirim tautan"}
               </Button>
             </FieldGroup>

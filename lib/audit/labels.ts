@@ -55,10 +55,25 @@ export const AUDIT_TABLE_LABELS: Record<string, string> = {
   daily_reports: "Laporan Harian",
   tools: "Alat",
   delivery_notes: "Surat Jalan",
+  materials: "Material",
+  material_transactions: "Transaksi Material",
+  incidents: "Insiden K3",
+  incident_actions: "Tindakan Perbaikan K3",
+  invoices: "Invoice",
+  invoice_payments: "Pembayaran Invoice",
+  supplier_bills: "Tagihan Supplier",
+  supplier_payments: "Pembayaran Supplier",
+  expenses: "Pengeluaran",
+  field_cash_movements: "Top-up/Pengembalian Kas Lapangan",
+  field_cash_expenses: "Pengeluaran Kas Lapangan",
+  kasbons: "Kasbon",
+  payroll_periods: "Periode Gaji",
+  payslip_adjustments: "Penyesuaian Slip Gaji",
+  attendance: "Absensi (koreksi)",
 };
 
 /** Audit tables whose entries only Direktur may read (PRD §6, SQL is_pay_table). */
-export const PAY_AUDIT_TABLES = ["employee_pay_settings"];
+export const PAY_AUDIT_TABLES = ["employee_pay_settings", "kasbons", "payslips", "payslip_adjustments", "kasbon_installments", "payroll_allocations"];
 
 /**
  * Fields that store an id; the server swaps the id for this column of the
@@ -103,6 +118,11 @@ export const AUDIT_REFS: Record<
     from_location_id: { table: "locations", column: "name" },
     to_location_id: { table: "locations", column: "name" },
   },
+  materials: { category_id: { table: "item_categories", column: "name" } },
+  material_transactions: { location_id: { table: "locations", column: "name" } },
+  incidents: { project_id: { table: "projects", column: "code" } },
+  invoices: { project_id: { table: "projects", column: "code" } },
+  incident_actions: { pic_employee_id: { table: "employees", column: "full_name" } },
   assignments: {
     employee_id: { table: "employees", column: "full_name" },
     project_id: { table: "projects", column: "code" },
@@ -389,6 +409,97 @@ const AUDIT_FIELDS: Record<string, Record<string, FieldSpec>> = {
     receipt_note: { label: "Catatan penerimaan" },
     cancelled_at: { label: "Dibatalkan", format: (value) => formatDate(String(value)) },
     cancel_reason: { label: "Alasan batal" },
+  },
+  materials: {
+    code: { label: "Kode" },
+    name: { label: "Nama" },
+    unit_code: { label: "Satuan" },
+    category_id: { label: "Kategori" },
+    ownership: { label: "Kepemilikan", format: (value) => (value === "client" ? "Titipan Klien" : "Milik Perusahaan") },
+    min_stock: { label: "Stok minimum" },
+    notes: { label: "Catatan" },
+    is_active: { label: "Status", format: asActive },
+  },
+  material_transactions: {
+    kind: {
+      label: "Jenis",
+      format: (value) =>
+        ({ opening: "Saldo awal", receipt: "Penerimaan", usage: "Pemakaian", return: "Kembali ke klien", opname: "Stok opname" })[
+          String(value)
+        ] ?? String(value),
+    },
+    location_id: { label: "Lokasi" },
+    txn_date: { label: "Tanggal", format: asDate },
+    source: { label: "Sumber", format: (value) => (value === "client" ? "Klien" : "Supplier") },
+    doc_no: { label: "No. dokumen" },
+    notes: { label: "Keterangan" },
+    status: { label: "Status", format: (value) => (value === "cancelled" ? "Batal" : "Aktif") },
+    cancel_reason: { label: "Alasan batal" },
+    cancelled_at: { label: "Dibatalkan", format: (value) => formatDate(String(value)) },
+    stock_opname: { label: "Selisih stok opname" },
+  },
+  incidents: {
+    number: { label: "Nomor" },
+    project_id: { label: "Proyek" },
+    occurred_at: { label: "Waktu", format: (value) => formatDate(String(value)) },
+    classification: {
+      label: "Klasifikasi",
+      format: (value) =>
+        ({ near_miss: "Near Miss", first_aid: "P3K", medical: "Perawatan Medis", lti: "LTI", fatal: "Fatal", property: "Kerusakan Properti/Alat" })[
+          String(value)
+        ] ?? String(value),
+    },
+    chronology: { label: "Kronologi" },
+    location_note: { label: "Tower/lokasi" },
+    immediate_action: { label: "Tindakan segera" },
+    status: {
+      label: "Status",
+      format: (value) =>
+        ({ reported: "Dilaporkan", investigating: "Investigasi", closed: "Ditutup", cancelled: "Batal" })[String(value)] ?? String(value),
+    },
+    direct_cause: { label: "Penyebab langsung" },
+    root_cause: {
+      label: "Akar masalah",
+      format: (value) =>
+        ({ human: "Manusia", equipment: "Alat", method: "Metode", environment: "Lingkungan", material: "Material" })[String(value)] ?? String(value),
+    },
+    lost_days: { label: "Hari kerja hilang" },
+    cancel_reason: { label: "Alasan batal" },
+  },
+  invoices: {
+    number: { label: "Nomor" },
+    project_id: { label: "Proyek" },
+    description: { label: "Uraian" },
+    invoice_date: { label: "Tanggal", format: asDate },
+    due_date: { label: "Jatuh tempo", format: asDate },
+    gross_amount: { label: "Bruto", format: asRupiah },
+    dp_deduction: { label: "Pengembalian uang muka", format: asRupiah },
+    retention_deduction: { label: "Retensi", format: asRupiah },
+    other_deduction: { label: "Potongan lain", format: asRupiah },
+    dpp: { label: "DPP", format: asRupiah },
+    ppn_amount: { label: "PPN", format: asRupiah },
+    total: { label: "Total", format: asRupiah },
+    status: {
+      label: "Status",
+      format: (value) =>
+        ({ draft: "Draft", issued: "Terbit", partial: "Dibayar Sebagian", paid: "Lunas", cancelled: "Batal" })[String(value)] ?? String(value),
+    },
+    cancel_reason: { label: "Alasan batal" },
+  },
+  invoice_payments: {
+    payment_date: { label: "Tanggal bayar", format: asDate },
+    amount_received: { label: "Diterima", format: asRupiah },
+    pph_amount: { label: "PPh dipotong", format: asRupiah },
+    pph_slip_no: { label: "No. bukti potong" },
+    status: { label: "Status", format: (value) => (value === "cancelled" ? "Batal" : "Aktif") },
+    cancel_reason: { label: "Alasan batal" },
+  },
+  incident_actions: {
+    description: { label: "Uraian" },
+    pic_employee_id: { label: "PIC" },
+    due_date: { label: "Tenggat", format: asDate },
+    status: { label: "Status", format: (value) => (value === "done" ? "Selesai" : "Terbuka") },
+    done_note: { label: "Catatan hasil" },
   },
 };
 

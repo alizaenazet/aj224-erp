@@ -38,6 +38,7 @@ import { saveDailyReport } from "@/lib/daily-reports/actions";
 import { OBSTACLE_CATEGORIES, OBSTACLE_LABELS, WEATHERS, WEATHER_LABELS } from "@/lib/daily-reports/labels";
 import { dailyReportSchema, type DailyReportInput } from "@/lib/daily-reports/schema";
 import { formatNumber } from "@/lib/format";
+import { clearDraft, readDraft, writeDraft } from "@/lib/local-draft";
 
 type Option = { value: string; label: string };
 
@@ -57,31 +58,6 @@ type ReportFormProps = {
 };
 
 const draftKey = (projectId: string, date: string) => `daily-report:${projectId}:${date}`;
-
-function readDraft(key: string): DailyReportInput | null {
-  try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as DailyReportInput) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeDraft(key: string, values: unknown) {
-  try {
-    window.localStorage.setItem(key, JSON.stringify(values));
-  } catch {
-    // Storage full or blocked: the form still works without a draft.
-  }
-}
-
-function clearDraft(key: string) {
-  try {
-    window.localStorage.removeItem(key);
-  } catch {
-    // Nothing to clear.
-  }
-}
 
 /** Laporan harian (OPS-01) with a local draft on the device (UMM-12). */
 export function ReportForm({
@@ -132,7 +108,7 @@ export function ReportForm({
   useEffect(() => {
     if (restored.current) return;
     restored.current = true;
-    const draft = readDraft(key);
+    const draft = readDraft<DailyReportInput>(key);
     if (!draft) return;
     if (editing) {
       setPendingDraft(draft);

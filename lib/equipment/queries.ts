@@ -6,6 +6,7 @@ import {
   OWNERSHIPS,
   type MovementRow,
   type NoteLine,
+  type NoteMaterialLine,
   type NoteRow,
   type StockRow,
   type ToolCondition,
@@ -200,17 +201,23 @@ export async function toolFormOptions() {
 }
 
 const NOTE_SELECT =
-  "id, number, from_location_id, to_location_id, note_date, vehicle, driver, notes, status, sent_by, sent_at, received_by, received_at, receipt_note, cancelled_at, cancel_reason, from:locations!delivery_notes_from_location_id_fkey(name), to:locations!delivery_notes_to_location_id_fkey(name), lines:delivery_note_tool_lines(count)";
+  "id, number, from_location_id, to_location_id, note_date, vehicle, driver, notes, status, sent_by, sent_at, received_by, received_at, receipt_note, cancelled_at, cancel_reason, from:locations!delivery_notes_from_location_id_fkey(name), to:locations!delivery_notes_to_location_id_fkey(name), lines:delivery_note_tool_lines(count), material_lines:delivery_note_material_lines(count)";
 
 type RawNote = Omit<NoteRow, "from_location" | "to_location" | "line_count"> & {
   from: { name: string } | null;
   to: { name: string } | null;
   lines: { count: number }[];
+  material_lines: { count: number }[];
 };
 
 function toNoteRow(row: RawNote): NoteRow {
-  const { from, to, lines, ...rest } = row;
-  return { ...rest, from_location: from?.name ?? "—", to_location: to?.name ?? "—", line_count: lines?.[0]?.count ?? 0 };
+  const { from, to, lines, material_lines, ...rest } = row;
+  return {
+    ...rest,
+    from_location: from?.name ?? "—",
+    to_location: to?.name ?? "—",
+    line_count: (lines?.[0]?.count ?? 0) + (material_lines?.[0]?.count ?? 0),
+  };
 }
 
 export function parseNoteListParams(raw: RawSearchParams) {
@@ -265,6 +272,27 @@ export async function noteLines(noteId: string): Promise<NoteLine[]> {
     received_good: row.received_good,
     received_damaged: row.received_damaged,
     missing: row.missing,
+    receipt_note: row.receipt_note,
+  }));
+}
+
+/** Material lines of a note (MAT-04). */
+export async function noteMaterialLines(noteId: string): Promise<NoteMaterialLine[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("delivery_note_material_lines")
+    .select("id, material_id, quantity, received_quantity, missing, receipt_note, material:materials(code, name, unit_code)")
+    .eq("note_id", noteId)
+    .order("sort_order");
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    material_id: row.material_id,
+    material_code: row.material?.code ?? "—",
+    material_name: row.material?.name ?? "—",
+    unit_code: row.material?.unit_code ?? "",
+    quantity: Number(row.quantity),
+    received_quantity: row.received_quantity === null ? null : Number(row.received_quantity),
+    missing: row.missing === null ? null : Number(row.missing),
     receipt_note: row.receipt_note,
   }));
 }

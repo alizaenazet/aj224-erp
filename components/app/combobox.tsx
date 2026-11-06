@@ -55,7 +55,8 @@ export function Combobox({
           disabled={disabled}
           className="w-full justify-between font-normal"
         >
-          <span className={selected ? "truncate" : "truncate text-muted-foreground"}>
+          {/* w-0 + flex-1: a long label must not widen the field (phone forms). */}
+          <span className={selected ? "w-0 flex-1 truncate text-left" : "w-0 flex-1 truncate text-left text-muted-foreground"}>
             {selected?.label ?? placeholder}
           </span>
           <ChevronsUpDownIcon className="opacity-50" />

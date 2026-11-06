@@ -1,6 +1,7 @@
 // Attachment rules (UMM-03), shared by client and server. Each module that
-// attaches files adds its entity type here and a case to the SQL functions
-// can_read_attachment / can_write_attachment / attachment_bucket.
+// attaches files adds its entity type here and, in SQL, one row in
+// attachment_entity_types plus attachment_read_<type> / attachment_write_<type>
+// functions (see 20261106210000_attachment_rules.sql).
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 export const MAX_PHOTO_BYTES = 1024 * 1024;
@@ -86,6 +87,66 @@ export const ATTACHMENT_ENTITIES = {
     bucket: "project-files",
     path: (id: string) => `/operations/delivery-notes/${id}`,
     categories: { receipt: "Foto penerimaan/selisih" } as Record<string, string>,
+    single: [] as string[],
+  },
+  material_transaction: {
+    bucket: "project-files",
+    path: (id: string) => `/operations/material-transactions/${id}`,
+    categories: { document: "Foto dokumen" } as Record<string, string>,
+    single: [] as string[],
+  },
+  incident: {
+    bucket: "k3-files",
+    path: (id: string) => `/operations/incidents/${id}`,
+    categories: { photo: "Foto kejadian" } as Record<string, string>,
+    single: [] as string[],
+  },
+  incident_action: {
+    bucket: "k3-files",
+    path: () => "/operations/incidents/[id]",
+    categories: { evidence: "Bukti tindakan" } as Record<string, string>,
+    single: [] as string[],
+  },
+  invoice: {
+    bucket: "finance-files",
+    path: (id: string) => `/finance/invoices/${id}`,
+    categories: { bap: "BAP", other: "Lainnya" } as Record<string, string>,
+    single: [] as string[],
+  },
+  invoice_payment: {
+    bucket: "finance-files",
+    path: () => "/finance/invoices/[id]",
+    categories: { proof: "Bukti transfer" } as Record<string, string>,
+    single: [] as string[],
+  },
+  supplier_bill: {
+    bucket: "finance-files",
+    path: (id: string) => `/finance/bills/${id}`,
+    categories: { invoice: "Nota/faktur", other: "Lainnya" } as Record<string, string>,
+    single: [] as string[],
+  },
+  supplier_payment: {
+    bucket: "finance-files",
+    path: () => "/finance/bills/[id]",
+    categories: { proof: "Bukti bayar" } as Record<string, string>,
+    single: [] as string[],
+  },
+  expense: {
+    bucket: "finance-files",
+    path: (id: string) => `/finance/expenses/${id}`,
+    categories: { receipt: "Foto nota/bukti" } as Record<string, string>,
+    single: [] as string[],
+  },
+  field_cash_expense: {
+    bucket: "finance-files",
+    path: (id: string) => `/finance/field-cash/expenses/${id}`,
+    categories: { receipt: "Foto nota" } as Record<string, string>,
+    single: [] as string[],
+  },
+  field_cash_movement: {
+    bucket: "finance-files",
+    path: () => "/finance/field-cash/[projectId]",
+    categories: { proof: "Bukti transfer" } as Record<string, string>,
     single: [] as string[],
   },
   tender: {

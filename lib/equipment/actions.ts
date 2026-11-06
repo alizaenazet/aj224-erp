@@ -25,6 +25,7 @@ const idSchema = z.uuid("Data tidak valid.");
 function revalidateEquipment() {
   revalidatePath("/operations/tools", "layout");
   revalidatePath("/operations/delivery-notes", "layout");
+  revalidatePath("/operations/materials", "layout");
   revalidatePath("/projects/[id]", "layout");
   revalidatePath("/");
 }
@@ -137,10 +138,14 @@ export async function sendDeliveryNote(input: DeliveryNoteInput): Promise<Action
   if (!auth.ok) return auth;
   const parsed = deliveryNoteSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: firstZodError(parsed.error) };
-  const { lines, ...note } = parsed.data;
+  const { lines, material_lines, ...note } = parsed.data;
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("send_delivery_note", { p_note: note, p_lines: lines });
+  const { data, error } = await supabase.rpc("send_delivery_note", {
+    p_note: note,
+    p_lines: lines,
+    p_material_lines: material_lines,
+  });
   if (error) return { ok: false, error: dbErrorMessage(error) };
   revalidateEquipment();
   return { ok: true, message: "Surat jalan dikirim.", data: { id: data as string } };
@@ -160,6 +165,7 @@ export async function receiveDeliveryNote(input: { id: string; values: ReceiptIn
     p_note: id.data,
     p_lines: parsed.data.lines,
     p_receipt_note: parsed.data.receipt_note ?? "",
+    p_material_lines: parsed.data.material_lines,
   });
   if (error) return { ok: false, error: dbErrorMessage(error) };
   revalidateEquipment();

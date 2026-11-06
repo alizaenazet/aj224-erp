@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ListChecksIcon, MoreHorizontalIcon, PlusIcon } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
 import { toast } from "sonner";
@@ -78,10 +79,14 @@ type TermsCardProps = {
   contractValue: number | null;
   canManage: boolean;
   canMarkReady: boolean;
+  /** Active invoice per termin id (FIN-01); shown to roles that read invoices. */
+  invoices?: Record<string, { id: string; label: string }>;
+  /** Finance: offer Buat Invoice on Siap Ditagih termin. */
+  canInvoice?: boolean;
 };
 
 /** Payment-term schedule with the 100% check and manual Siap Ditagih (PRJ-03). */
-export function TermsCard({ projectId, terms, contractValue, canManage, canMarkReady }: TermsCardProps) {
+export function TermsCard({ projectId, terms, contractValue, canManage, canMarkReady, invoices = {}, canInvoice = false }: TermsCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<TermRow | null>(null);
   // Kept after closing so the dialog text stays stable during its exit animation.
@@ -193,6 +198,18 @@ export function TermsCard({ projectId, terms, contractValue, canManage, canMarkR
                           <span className="text-xs whitespace-nowrap text-muted-foreground">
                             {formatDateTime(term.ready_at)} · {term.ready_by_name ?? "Sistem"}
                           </span>
+                        ) : null}
+                        {invoices[term.id] ? (
+                          <Link
+                            href={`/finance/invoices/${invoices[term.id].id}`}
+                            className="text-xs whitespace-nowrap underline-offset-4 hover:underline"
+                          >
+                            {invoices[term.id].label}
+                          </Link>
+                        ) : canInvoice && term.status === "ready" ? (
+                          <Button asChild size="sm" variant="outline">
+                            <Link href={`/finance/invoices/new?term=${term.id}`}>Buat Invoice</Link>
+                          </Button>
                         ) : null}
                       </div>
                     </TableCell>

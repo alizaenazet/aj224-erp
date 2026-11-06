@@ -7,6 +7,7 @@ import { NoteForm } from "@/components/equipment/note-form";
 import { requireRole } from "@/lib/auth/session";
 import { allStock, locationOptions } from "@/lib/equipment/queries";
 import { todayWib } from "@/lib/format";
+import { allMaterialStock } from "@/lib/materials/queries";
 
 export const metadata: Metadata = { title: "Buat Surat Jalan" };
 
@@ -24,6 +25,6 @@ export default function NewDeliveryNotePage() {
 async function NewDeliveryNoteContent() {
   const profile = await requireRole(["operations"]);
   if (!profile) return <AccessDenied />;
-  const [locations, stock] = await Promise.all([locationOptions(), allStock()]);
-  return <NoteForm locations={locations} stock={stock} today={todayWib()} />;
+  const [locations, stock, materialStock] = await Promise.all([locationOptions(), allStock(), allMaterialStock()]);
+  return <NoteForm locations={locations} stock={stock} materialStock={materialStock} today={todayWib()} />;
 }

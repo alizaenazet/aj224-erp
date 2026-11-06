@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { sendDeliveryNote } from "@/lib/equipment/actions";
 import { CONDITION_LABELS, CONDITIONS, SENDABLE_CONDITIONS, type ToolCondition } from "@/lib/equipment/labels";
 import { deliveryNoteSchema } from "@/lib/equipment/schema";
+import { formatQuantity } from "@/lib/materials/labels";
 
 type StockItem = {
   tool_id: string;
@@ -32,7 +33,17 @@ type StockItem = {
   tool_name: string;
 };
 
+type MaterialStockItem = {
+  material_id: string;
+  location_id: string;
+  quantity: number;
+  material_code: string;
+  material_name: string;
+  unit_code: string;
+};
+
 type Line = { key: string; tool_id: string; condition: (typeof SENDABLE_CONDITIONS)[number]; quantity: string };
+type MaterialLine = { key: string; material_id: string; quantity: string };
 
 let keySeed = 0;
 const nextKey = () => `line-${++keySeed}`;
@@ -41,10 +52,12 @@ const nextKey = () => `line-${++keySeed}`;
 export function NoteForm({
   locations,
   stock,
+  materialStock,
   today,
 }: {
   locations: { value: string; label: string }[];
   stock: StockItem[];
+  materialStock: MaterialStockItem[];
   today: string;
 }) {
   const router = useRouter();
@@ -54,7 +67,8 @@ export function NoteForm({
   const [vehicle, setVehicle] = useState("");
   const [driver, setDriver] = useState("");
   const [notes, setNotes] = useState("");
-  const [lines, setLines] = useState<Line[]>([{ key: nextKey(), tool_id: "", condition: "good", quantity: "1" }]);
+  const [lines, setLines] = useState<Line[]>([]);
+  const [materialLines, setMaterialLines] = useState<MaterialLine[]>([]);
   const [pending, setPending] = useState(false);
 
   const atOrigin = useMemo(() => stock.filter((item) => item.location_id === from), [stock, from]);
@@ -74,6 +88,24 @@ export function NoteForm({
     return [...seen.values()].sort((a, b) => a.label.localeCompare(b.label));
   }, [atOrigin]);
 
+  const materialsAtOrigin = useMemo(() => materialStock.filter((item) => item.location_id === from), [materialStock, from]);
+  const materialOptions = useMemo(
+    () =>
+      materialsAtOrigin
+        .map((item) => ({
+          value: item.material_id,
+          label: `${item.material_code} — ${item.material_name}`,
+          description: `Tersedia ${formatQuantity(item.quantity)} ${item.unit_code}`,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [materialsAtOrigin],
+  );
+  const materialAt = (materialId: string) => materialsAtOrigin.find((item) => item.material_id === materialId);
+
+  function updateMaterial(key: string, patch: Partial<MaterialLine>) {
+    setMaterialLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)));
+  }
+
   const available = (toolId: string, condition: ToolCondition) =>
     atOrigin.find((item) => item.tool_id === toolId && item.condition === condition)?.quantity ?? 0;
 
@@ -90,6 +122,7 @@ export function NoteForm({
       driver,
       notes,
       lines: lines.map((line) => ({ tool_id: line.tool_id, condition: line.condition, quantity: line.quantity })),
+      material_lines: materialLines.map((line) => ({ material_id: line.material_id, quantity: line.quantity })),
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Data tidak valid.");
@@ -117,7 +150,8 @@ export function NoteForm({
                 value={from}
                 onValueChange={(value) => {
                   setFrom(value);
-                  setLines([{ key: nextKey(), tool_id: "", condition: "good", quantity: "1" }]);
+                  setLines([]);
+                  setMaterialLines([]);
                 }}
               >
                 <SelectTrigger id="note-from" className="w-full">
@@ -173,7 +207,10 @@ export function NoteForm({
       <Card>
         <CardHeader>
           <CardTitle>Daftar alat</CardTitle>
-          <CardDescription>Hanya alat yang ada di lokasi asal; jumlah tidak boleh melebihi stok per kondisi.</CardDescription>
+          <CardDescription>
+            Hanya alat yang ada di lokasi asal; jumlah tidak boleh melebihi stok per kondisi. Isi alat, material, atau
+            keduanya.
+          </CardDescription>
           <CardAction>
             <Button
               size="sm"
@@ -186,6 +223,7 @@ export function NoteForm({
           </CardAction>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
+          {lines.length === 0 ? <p className="text-sm text-muted-foreground">Belum ada alat.</p> : null}
           {lines.map((line, index) => {
             const max = line.tool_id ? available(line.tool_id, line.condition) : 0;
             return (
@@ -234,9 +272,69 @@ export function NoteForm({
                   variant="ghost"
                   size="icon"
                   className="md:mt-6"
-                  disabled={lines.length === 1}
                   onClick={() => setLines((current) => current.filter((item) => item.key !== line.key))}
                   aria-label={`Hapus baris ${index + 1}`}
+                >
+                  <Trash2Icon />
+                </Button>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Daftar material</CardTitle>
+          <CardDescription>Material yang ada di lokasi asal (MAT-04); jumlah tidak boleh melebihi stok.</CardDescription>
+          <CardAction>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setMaterialLines((current) => [...current, { key: nextKey(), material_id: "", quantity: "" }])}
+            >
+              <PlusIcon />
+              Material
+            </Button>
+          </CardAction>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {materialLines.length === 0 ? <p className="text-sm text-muted-foreground">Belum ada material.</p> : null}
+          {materialLines.map((line, index) => {
+            const item = line.material_id ? materialAt(line.material_id) : undefined;
+            return (
+              <div key={line.key} className="flex flex-col gap-3 md:flex-row md:items-start">
+                <Field className="flex-1">
+                  <FieldLabel htmlFor={`mline-material-${index}`}>Material</FieldLabel>
+                  <Combobox
+                    id={`mline-material-${index}`}
+                    value={line.material_id}
+                    onChange={(value) => updateMaterial(line.key, { material_id: value })}
+                    options={materialOptions}
+                    placeholder="Pilih material"
+                    searchPlaceholder="Cari kode atau nama material"
+                    emptyText="Tidak ada material di lokasi asal."
+                  />
+                </Field>
+                <Field className="md:w-40">
+                  <FieldLabel htmlFor={`mline-quantity-${index}`}>Jumlah{item ? ` (${item.unit_code})` : ""}</FieldLabel>
+                  <Input
+                    id={`mline-quantity-${index}`}
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step="any"
+                    value={line.quantity}
+                    onChange={(event) => updateMaterial(line.key, { quantity: event.target.value })}
+                  />
+                  {item ? <FieldDescription>Tersedia {formatQuantity(item.quantity)}</FieldDescription> : null}
+                </Field>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:mt-6"
+                  onClick={() => setMaterialLines((current) => current.filter((entry) => entry.key !== line.key))}
+                  aria-label={`Hapus material ${index + 1}`}
                 >
                   <Trash2Icon />
                 </Button>
